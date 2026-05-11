@@ -1,0 +1,233 @@
+{
+  "templates": [
+    {
+      "id": "tpl-phone-stand",
+      "name": "手机支架",
+      "description": "可调节角度的手机桌面支架，适合 4-7 寸手机",
+      "category": "bracket",
+      "tier": "free",
+      "tags": [
+        "手机",
+        "支架",
+        "桌面"
+      ],
+      "thumbnail": "",
+      "usageCount": 1284,
+      "params": [
+        {
+          "name": "phoneWidth",
+          "default": 75,
+          "min": 60,
+          "max": 90,
+          "unit": "mm"
+        },
+        {
+          "name": "phoneHeight",
+          "default": 150,
+          "min": 120,
+          "max": 170,
+          "unit": "mm"
+        },
+        {
+          "name": "angle",
+          "default": 70,
+          "min": 45,
+          "max": 85,
+          "unit": "°"
+        }
+      ],
+      "code": "// @material: metal\nconst phoneWidth = 75\nconst angle = 70\nconst thickness = 3\n\nfunction main() {\n  const base = roundedCuboid({ size: [95, 68, thickness], roundRadius: 5, segments: 20 })\n  const support = translate([0, -18, 27], cuboid({ size: [phoneWidth + 6, thickness, 54] }))\n  const slot = translate([0, 20, thickness + 3], cuboid({ size: [phoneWidth + 4, thickness + 1, 6] }))\n  const guideL = translate([-phoneWidth / 2 - 2, 20, thickness + 5], cuboid({ size: [3, thickness, 8] }))\n  const guideR = translate([phoneWidth / 2 + 2, 20, thickness + 5], cuboid({ size: [3, thickness, 8] }))\n  const cableHole = cylinder({ radius: 5.5, height: thickness + 2, segments: 24 })\n  const baseBody = subtract(base, cableHole)\n  return union(\n    colorize([0.17, 0.17, 0.22], baseBody),\n    colorize([0.24, 0.24, 0.30], support),\n    colorize([0.34, 0.32, 0.44], union(slot, guideL, guideR))\n  )\n}\nmodule.exports = { main }"
+    },
+    {
+      "id": "tpl-storage-box",
+      "name": "收纳盒",
+      "description": "带盖子的通用收纳盒，可自定义尺寸和壁厚",
+      "category": "enclosure",
+      "tier": "free",
+      "tags": [
+        "盒子",
+        "收纳",
+        "外壳"
+      ],
+      "thumbnail": "",
+      "usageCount": 986,
+      "params": [
+        {
+          "name": "boxWidth",
+          "default": 80,
+          "min": 30,
+          "max": 200,
+          "unit": "mm"
+        },
+        {
+          "name": "boxDepth",
+          "default": 60,
+          "min": 30,
+          "max": 200,
+          "unit": "mm"
+        },
+        {
+          "name": "boxHeight",
+          "default": 40,
+          "min": 20,
+          "max": 150,
+          "unit": "mm"
+        },
+        {
+          "name": "wallThickness",
+          "default": 2,
+          "min": 1.2,
+          "max": 5,
+          "unit": "mm"
+        }
+      ],
+      "code": "// @material: plastic\nconst boxWidth = 80\nconst boxDepth = 60\nconst boxHeight = 40\nconst wallThickness = 2\n\nfunction main() {\n  const outer = roundedCuboid({ size: [boxWidth, boxDepth, boxHeight], roundRadius: 4, segments: 16 })\n  const inner = translate([0, 0, wallThickness], roundedCuboid({ size: [boxWidth - wallThickness * 2, boxDepth - wallThickness * 2, boxHeight], roundRadius: 2, segments: 16 }))\n  const grip = translate([0, boxDepth / 2, boxHeight / 4], cylinder({ radiusBottom: 14, radiusTop: 9, height: boxHeight / 2, segments: 24 }))\n  const body = subtract(outer, inner, grip)\n  return colorize([0.15, 0.4, 0.72], body)\n}\nmodule.exports = { main }"
+    },
+    {
+      "id": "tpl-m3-bracket",
+      "name": "M3 螺母槽支架",
+      "description": "带 M3 螺纹嵌入槽的通用安装支架",
+      "category": "bracket",
+      "tier": "free",
+      "tags": [
+        "M3",
+        "螺丝",
+        "支架",
+        "安装"
+      ],
+      "thumbnail": "",
+      "usageCount": 757,
+      "params": [
+        {
+          "name": "bracketWidth",
+          "default": 40,
+          "min": 20,
+          "max": 100,
+          "unit": "mm"
+        },
+        {
+          "name": "bracketHeight",
+          "default": 30,
+          "min": 15,
+          "max": 80,
+          "unit": "mm"
+        },
+        {
+          "name": "holeCount",
+          "default": 2,
+          "min": 1,
+          "max": 6,
+          "unit": ""
+        }
+      ],
+      "code": "// @material: metal\nconst bracketWidth = 40\nconst bracketHeight = 30\nconst holeCount = 2\nconst thickness = 4\n\nfunction main() {\n  const base = roundedCuboid({ size: [bracketWidth, bracketHeight, thickness], roundRadius: 3, segments: 16 })\n  const spacing = bracketWidth / (holeCount + 1)\n  const holes = []\n  for (let i = 0; i < holeCount; i++) {\n    const x = spacing * (i + 1) - bracketWidth / 2\n    holes.push(translate([x, 0, 0], cylinder({ radius: 1.65, height: thickness + 1, segments: 20 })))\n    holes.push(translate([x, 0, thickness * 0.3], cylinder({ radiusBottom: 1.65, radiusTop: 3.2, height: thickness * 0.7, segments: 20 })))\n  }\n  const slotL = translate([-bracketWidth / 2 + 5, 0, 0], cylinder({ radius: 2.2, height: thickness + 1, segments: 16 }))\n  const slotR = translate([bracketWidth / 2 - 5, 0, 0], cylinder({ radius: 2.2, height: thickness + 1, segments: 16 }))\n  const body = subtract(base, ...holes, slotL, slotR)\n  return colorize([0.48, 0.48, 0.54], body)\n}\nmodule.exports = { main }"
+    },
+    {
+      "id": "tpl-cable-clip",
+      "name": "理线夹",
+      "description": "桌面走线管理夹，粘贴或螺丝固定",
+      "category": "connector",
+      "tier": "free",
+      "tags": [
+        "线缆",
+        "整理",
+        "夹子"
+      ],
+      "thumbnail": "",
+      "usageCount": 638,
+      "params": [
+        {
+          "name": "cableCount",
+          "default": 3,
+          "min": 1,
+          "max": 8,
+          "unit": ""
+        },
+        {
+          "name": "cableDiameter",
+          "default": 4,
+          "min": 2,
+          "max": 10,
+          "unit": "mm"
+        }
+      ],
+      "code": "// @material: plastic\nconst cableCount = 3\nconst cableDiameter = 4\nconst wallT = 1.5\nconst slotR = cableDiameter / 2 + 0.2\n\nfunction main() {\n  const totalWidth = cableCount * (cableDiameter + wallT * 2) + wallT\n  const base = cuboid({ size: [totalWidth, 15, 8] })\n  let slots = []\n  for (let i = 0; i < cableCount; i++) {\n    const x = -totalWidth / 2 + wallT + slotR + i * (slotR * 2 + wallT)\n    slots.push(translate([x, 0, 2], cylinder({ radius: slotR, height: 10 })))\n  }\n  return colorize([0.18, 0.52, 0.92], subtract(base, ...slots))\n}\n\nmodule.exports = { main }"
+    },
+    {
+      "id": "tpl-gear",
+      "name": "正齿轮",
+      "description": "标准渐开线正齿轮，可配置模数和齿数",
+      "category": "hardware",
+      "tier": "free",
+      "tags": [
+        "齿轮",
+        "机械",
+        "传动"
+      ],
+      "thumbnail": "",
+      "usageCount": 532,
+      "params": [
+        {
+          "name": "toothCount",
+          "default": 20,
+          "min": 8,
+          "max": 60,
+          "unit": ""
+        },
+        {
+          "name": "outerR",
+          "default": 28,
+          "min": 12,
+          "max": 80,
+          "unit": "mm"
+        },
+        {
+          "name": "gearHeight",
+          "default": 8,
+          "min": 3,
+          "max": 20,
+          "unit": "mm"
+        }
+      ],
+      "code": "// @material: silver\nconst toothCount = 20  // 齿数 min:8 max:60\nconst outerR = 28      // 齿顶圆半径 unit:mm min:12 max:80\nconst gearHeight = 8   // 齿轮厚度 unit:mm min:3 max:20\n\nfunction main() {\n  const rootR  = outerR * 0.78   // 齿根圆半径\n  const hubR   = outerR * 0.22   // 中心轮毂半径\n  const boreR  = outerR * 0.12   // 安装孔半径\n\n  // ── XZ 平面齿形轮廓（真实锯齿，4点/齿）──\n  const pts = []\n  const toothHalf = (Math.PI / toothCount) * 0.45\n  for (let i = 0; i < toothCount; i++) {\n    const a = (i / toothCount) * 2 * Math.PI\n    pts.push([rootR  * Math.cos(a - toothHalf),        rootR  * Math.sin(a - toothHalf)])\n    pts.push([outerR * Math.cos(a - toothHalf * 0.45), outerR * Math.sin(a - toothHalf * 0.45)])\n    pts.push([outerR * Math.cos(a + toothHalf * 0.45), outerR * Math.sin(a + toothHalf * 0.45)])\n    pts.push([rootR  * Math.cos(a + toothHalf),        rootR  * Math.sin(a + toothHalf)])\n  }\n  const gearBody = colorize([0.52, 0.56, 0.62],\n    extrudeLinear({ height: gearHeight }, polygon({ points: pts }))\n  )\n\n  // ── 辐条（十字型加轻记号）──\n  const spokeLen = rootR - hubR - 3\n  const spokes = []\n  for (let i = 0; i < 4; i++) {\n    const a = (i / 4) * Math.PI * 2\n    const sa = Math.sin(a), ca = Math.cos(a)\n    const mx = ca * (hubR + spokeLen / 2)\n    const mz = sa * (hubR + spokeLen / 2)\n    spokes.push(colorize([0.42, 0.46, 0.52],\n      translate([mx, 1, mz],\n        rotate([0, a, 0], cuboid({ size: [spokeLen, gearHeight - 2, outerR * 0.08 + 1] }))\n      )\n    ))\n  }\n\n  // ── 中心轮毂 + 安装孔（视觉标识）──\n  const hub = colorize([0.38, 0.40, 0.46],\n    translate([0, -1, 0], cylinder({ radius: hubR, height: gearHeight + 2, segments: 24 }))\n  )\n  const bore = colorize([0.22, 0.22, 0.25],\n    translate([0, -2, 0], cylinder({ radius: boreR, height: gearHeight + 4, segments: 16 }))\n  )\n\n  return union(gearBody, ...spokes, hub, bore)\n}\nmodule.exports = { main }"
+    },
+    {
+      "id": "tpl-lamp-shade",
+      "name": "台灯灯罩",
+      "description": "参数化设计台灯灯罩，可调节大小和形状",
+      "category": "creative",
+      "tier": "free",
+      "tags": [
+        "灯罩",
+        "台灯",
+        "家居"
+      ],
+      "thumbnail": "",
+      "usageCount": 418,
+      "params": [
+        {
+          "name": "topRadius",
+          "default": 40,
+          "min": 20,
+          "max": 80,
+          "unit": "mm"
+        },
+        {
+          "name": "bottomRadius",
+          "default": 80,
+          "min": 40,
+          "max": 160,
+          "unit": "mm"
+        },
+        {
+          "name": "shadeHeight",
+          "default": 60,
+          "min": 30,
+          "max": 120,
+          "unit": "mm"
+        }
+      ],
+      "code": "const topRadius = 40\nconst bottomRadius = 80\nconst shadeHeight = 60\nconst wallT = 2\n\nfunction main() {\n  const outer = cylinder({ radius: bottomRadius, height: shadeHeight, segments: 64 })\n  const inner = translate([0, 0, wallT], cylinder({ radius: bottomRadius - wallT, height: shadeHeight, segments: 64 }))\n  return subtract(outer, inner)\n}\n\nmodule.exports = { main }"
+    } 
+  ]
+}

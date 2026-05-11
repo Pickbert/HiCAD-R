@@ -1,0 +1,31 @@
+{
+  "name": "@hicad/frontend",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1 --port 5173",
+    "build": "vue-tsc --noEmit && vite build",
+    "preview": "vite preview --host 127.0.0.1 --port 4173",
+    "test": "vitest run",
+    "lint": "vue-tsc --noEmit",
+    "typecheck": "vue-tsc --noEmit"
+  },
+  "dependencies": {
+    "@jscad/modeling": "^2.12.6",
+    "@jscad/obj-serializer": "^2.1.23",
+    "@jscad/stl-serializer": "^2.1.23",
+    "@hicad/shared": "workspace:*",
+    "monaco-editor": "^0.49.0",
+    "pinia": "^2.1.7",
+    "three": "^0.164.1",
+    "vue": "^3.4.27"
+  },
+  "devDependencies": {
+    "@types/three": "^0.164.1",
+    "@vitejs/plugin-vue": "^5.0.5",
+    "@vue/test-utils": "^2.4.6",
+    "vite": "^5.2.12",
+    "vitest": "^1.6.0",
+    "vue-tsc": "^2.0.19"
+  }
+}

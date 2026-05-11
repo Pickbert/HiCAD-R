@@ -1,0 +1,27 @@
+{
+  "name": "hicad",
+  "version": "1.0.0",
+  "private": true,
+  "description": "HiCAD - AI driven parametric 3D CAD modeling platform",
+  "license": "GPL-3.0",
+  "packageManager": "pnpm@9.15.9",
+  "scripts": {
+    "dev": "concurrently -n shared,backend,frontend -c cyan,green,blue \"pnpm --filter @hicad/shared dev\" \"pnpm --filter @hicad/backend dev\" \"pnpm --filter @hicad/frontend dev\"",
+    "build": "pnpm --filter @hicad/shared build && pnpm --filter @hicad/backend build && pnpm --filter @hicad/frontend build",
+    "start": "pnpm --filter @hicad/backend start",
+    "test": "pnpm --filter @hicad/shared test && pnpm --filter @hicad/backend test && pnpm --filter @hicad/frontend test",
+    "lint": "pnpm --filter @hicad/shared lint && pnpm --filter @hicad/backend lint && pnpm --filter @hicad/frontend lint",
+    "typecheck": "pnpm --filter @hicad/shared typecheck && pnpm --filter @hicad/backend typecheck && pnpm --filter @hicad/frontend typecheck",
+    "audit:prod": "pnpm audit --prod"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.12",
+    "concurrently": "^8.2.2",
+    "typescript": "^5.4.5",
+    "vitest": "^1.6.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=9.0.0"
+  }
+}
