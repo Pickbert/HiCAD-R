@@ -20,6 +20,14 @@ const dimensionsLabel = computed(() => {
   const { width, depth, height } = store.preview.dimensions;
   return `W ${width} mm · D ${depth} mm · H ${height} mm`;
 });
+const statsLabel = computed(() => {
+  const triangles = store.meshes.reduce((total, mesh) => total + mesh.indices.length / 3, 0);
+  const vertices = store.meshes.reduce((total, mesh) => total + mesh.positions.length / 3, 0);
+  return `${triangles} tris · ${vertices} verts`;
+});
+const visibleParameters = computed(() => store.parameters.slice(0, 6));
+let grid: THREE.GridHelper | undefined;
+let axes: THREE.AxesHelper | undefined;
 
 onMounted(() => {
   if (!canvasHost.value) return;
@@ -32,16 +40,25 @@ onMounted(() => {
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   canvasHost.value.appendChild(renderer.domElement);
   scene.add(new THREE.HemisphereLight(0x9fcaff, 0x101820, 1.5));
-  const grid = new THREE.GridHelper(420, 28, 0x21445a, 0x172937);
+  grid = new THREE.GridHelper(420, 28, 0x21445a, 0x172937);
   scene.add(grid);
+  axes = new THREE.AxesHelper(130);
+  scene.add(axes);
   createWorker();
   rebuildMesh();
+  syncViewOptions();
   animate();
 });
 
 watch(
   () => [store.code, store.viewMode, store.material],
   () => rebuildMesh(),
+  { deep: true }
+);
+
+watch(
+  () => [store.viewMode, store.annotationSettings.grid, store.annotationSettings.axes],
+  () => syncViewOptions(),
   { deep: true }
 );
 
@@ -54,7 +71,9 @@ onBeforeUnmount(() => {
 
 function animate() {
   frame = requestAnimationFrame(animate);
-  for (const item of meshes) item.rotation.z += 0.002;
+  if (store.viewMode !== 'plan') {
+    for (const item of meshes) item.rotation.z += 0.002;
+  }
   renderer?.render(scene!, camera!);
 }
 
@@ -96,12 +115,14 @@ function renderMeshes(workerMeshes: WorkerMesh[]) {
   clearMeshes();
   for (const workerMesh of workerMeshes) {
     const geometry = buildGeometryFromWorkerMesh(workerMesh);
+    const materialName = store.partMaterials[workerMesh.material] ?? workerMesh.material;
+    const overrideColor = materialName === workerMesh.material ? undefined : materialColor(materialName);
     const material = new THREE.MeshStandardMaterial({
-      color: new THREE.Color(workerMesh.color[0], workerMesh.color[1], workerMesh.color[2]),
-      metalness: workerMesh.material === 'gold' || workerMesh.material === 'silver' || workerMesh.material === 'steel' ? 0.75 : 0.2,
-      roughness: workerMesh.material === 'glass' ? 0.05 : 0.35,
-      transparent: store.viewMode === 'xray' || workerMesh.material === 'glass',
-      opacity: store.viewMode === 'xray' ? 0.35 : workerMesh.material === 'glass' ? 0.55 : 1,
+      color: overrideColor ?? new THREE.Color(workerMesh.color[0], workerMesh.color[1], workerMesh.color[2]),
+      metalness: materialName === 'gold' || materialName === 'silver' || materialName === 'steel' ? 0.75 : 0.2,
+      roughness: materialName === 'glass' ? 0.05 : 0.35,
+      transparent: store.viewMode === 'xray' || materialName === 'glass',
+      opacity: store.viewMode === 'xray' ? 0.35 : materialName === 'glass' ? 0.55 : 1,
       wireframe: store.viewMode === 'wireframe' || store.viewMode === 'plan'
     });
     const item = new THREE.Mesh(geometry, material);
@@ -109,6 +130,7 @@ function renderMeshes(workerMeshes: WorkerMesh[]) {
     meshes.push(item);
   }
   camera?.lookAt(0, 0, 0);
+  syncViewOptions();
 }
 
 function clearMeshes() {
@@ -137,6 +159,20 @@ function materialColor(material: string): number {
     }[material] ?? 0x4ea1ff
   );
 }
+
+function syncViewOptions() {
+  if (!camera) return;
+  if (store.viewMode === 'plan') {
+    camera.position.set(0, 0, 360);
+    camera.up.set(0, 1, 0);
+  } else {
+    camera.position.set(160, 130, 180);
+    camera.up.set(0, 1, 0);
+  }
+  camera.lookAt(0, 0, 0);
+  if (grid) grid.visible = store.annotationSettings.grid;
+  if (axes) axes.visible = store.annotationSettings.axes;
+}
 </script>
 
 <template>
@@ -148,9 +184,13 @@ function materialColor(material: string): number {
         <button :class="{ active: store.viewMode === 'xray' }" @click="store.viewMode = 'xray'">X-Ray</button>
         <button :class="{ active: store.viewMode === 'plan' }" @click="store.viewMode = 'plan'">平面 CAD</button>
       </div>
-      <span>{{ dimensionsLabel }}</span>
+      <span>{{ dimensionsLabel }} · {{ statsLabel }}</span>
     </div>
     <div ref="canvasHost" class="canvas-host"></div>
+    <div v-if="store.annotationSettings.dimensions" class="dimension-label">{{ dimensionsLabel }}</div>
+    <div v-if="store.annotationSettings.parameterLabels" class="parameter-labels">
+      <span v-for="parameter in visibleParameters" :key="parameter.name">{{ parameter.label }} {{ parameter.value }}{{ parameter.unit }}</span>
+    </div>
     <div class="viewer-status">{{ workerState }}</div>
   </section>
 </template>

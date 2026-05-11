@@ -47,6 +47,21 @@ export class AdminController {
     return this.db.data.feedbacks;
   }
 
+  @Get('activation-codes')
+  activationCodes() {
+    return this.db.data.activationCodes.map(({ code, tier, createdAt, expiresAt, usedBy, usedAt, maxUses, useCount, disabled }) => ({
+      code,
+      tier,
+      createdAt,
+      expiresAt,
+      usedBy,
+      usedAt,
+      maxUses,
+      useCount,
+      disabled: Boolean(disabled)
+    }));
+  }
+
   @Post('activation-codes')
   createActivationCode(@Body() body: { code?: string; tier?: 'free' | 'pro' | 'team'; maxUses?: number; expiresAt?: string; disabled?: boolean }, @CurrentUser() user: StoredUser) {
     const code = body.code?.trim() || crypto.randomUUID().slice(0, 12);
