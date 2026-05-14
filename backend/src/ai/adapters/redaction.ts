@@ -6,5 +6,8 @@ const secretPatterns = [
 ];
 
 export function redactSecrets(input: string): string {
-  return secretPatterns.reduce((text, pattern) => text.replace(pattern, (_match, prefix = '', suffix = '') => `${prefix}[REDACTED]${suffix}`), input);
+  return secretPatterns.reduce(
+    (text, pattern) => text.replace(pattern, (_match, prefix = '', suffix = '') => `${prefix}[REDACTED]${suffix}`),
+    input
+  );
 }

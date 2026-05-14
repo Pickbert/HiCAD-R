@@ -1,0 +1,14 @@
+node_modules/
+dist/
+coverage/
+playwright-report/
+test-results/
+data/
+frontend/assets/
+frontend/monacoeditorwork/
+frontend/workers/
+frontend/dist/
+backend/dist/
+shared/dist/
+pnpm-lock.yaml
+*.log

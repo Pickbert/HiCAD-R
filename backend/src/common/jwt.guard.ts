@@ -19,7 +19,11 @@ export class JwtGuard implements CanActivate {
       throw new UnauthorizedException('missing bearer token');
     }
     const payload = await this.jwt.verifyAsync<{ sub: string }>(token, {
-      secret: getRequiredSecret('JWT_ACCESS_SECRET', this.config.get('JWT_ACCESS_SECRET'), 'development-access-secret-with-32-chars')
+      secret: getRequiredSecret(
+        'JWT_ACCESS_SECRET',
+        this.config.get('JWT_ACCESS_SECRET'),
+        'development-access-secret-with-32-chars'
+      )
     });
     const user = this.db.data.users.find((entry) => entry.id === payload.sub);
     if (!user) {
@@ -46,7 +50,11 @@ export class OptionalJwtGuard implements CanActivate {
     }
     try {
       const payload = await this.jwt.verifyAsync<{ sub: string }>(token, {
-        secret: getRequiredSecret('JWT_ACCESS_SECRET', this.config.get('JWT_ACCESS_SECRET'), 'development-access-secret-with-32-chars')
+        secret: getRequiredSecret(
+          'JWT_ACCESS_SECRET',
+          this.config.get('JWT_ACCESS_SECRET'),
+          'development-access-secret-with-32-chars'
+        )
       });
       request.user = this.db.data.users.find((entry) => entry.id === payload.sub);
     } catch {

@@ -17,6 +17,10 @@ publishing, sharing, importing, and exporting JSCAD-based 3D models.
 
 </div>
 
+## Project Docs
+
+[Contributing](CONTRIBUTING.md) · [Changelog](CHANGELOG.md) · [Release checklist](docs/RELEASE_CHECKLIST.md) · [Nginx example](docs/deploy/nginx.hicad-r.conf) · [TODO](docs/HICAD_TODO.md)
+
 ## What This Repo Is
 
 HiCAD-R is a local-first, full-stack TypeScript CAD product prototype. It combines:
@@ -36,19 +40,20 @@ This repository is maintained at [Pickbert/HiCAD-R](https://github.com/Pickbert/
 
 ## Feature Status
 
-| Area | Current status |
-| --- | --- |
-| Auth | Register/login modal, JWT access token, refresh token persistence, `/users/me`, first user becomes admin |
-| Workspace | AI panel, Monaco editor, parameter panel, model metadata, save/publish/share actions with loading/error/toast states |
-| AI | SSE generation flow with `start/spec/retry/code/done/error`, local fallback codegen, modify-current-code mode, diff/apply UX, history/regenerate |
-| CAD runtime | JSCAD `main()` execution in Worker, safety checks, timeout handling, structured errors, transferable mesh data |
-| Rendering | Three.js viewer, camera controls, preset views, solid/wireframe/X-Ray/plan modes, grid/axis/annotation toggles, stats and bounding box display |
-| Materials | 10 material presets, model-level material, material comments, colored part grouping |
-| Models | Mine/draft/published/shared filters, marketplace search/category/tag/sort, read-only share preview |
-| Assets | ASCII STL import as Base64-backed model asset, real STL/OBJ export from mesh data, export preview with volume/triangles/unit |
-| Admin | Users, models, templates, orders, feedback, activation code views and basic admin actions |
-| Mobile/UI | Collapsible panels on narrow screens, shared toast/confirm/loading/empty/error components, keyboard and aria improvements |
-| Quality | Vitest suites, Nest HTTP integration tests, Playwright E2E/screenshots, `pnpm ci:quality`, GitHub Actions workflow |
+| Area        | Current status                                                                                                                                   |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Auth        | Register/login modal, JWT access token, refresh token persistence, `/users/me`, first user becomes admin                                         |
+| Workspace   | AI panel, Monaco editor, parameter panel, model metadata, save/publish/share actions with loading/error/toast states                             |
+| AI          | SSE generation flow with `start/spec/retry/code/done/error`, local fallback codegen, modify-current-code mode, diff/apply UX, history/regenerate |
+| CAD runtime | JSCAD `main()` execution in Worker, safety checks, timeout handling, structured errors, transferable mesh data                                   |
+| Rendering   | Three.js viewer, camera controls, preset views, solid/wireframe/X-Ray/plan modes, grid/axis/annotation toggles, stats and bounding box display   |
+| Materials   | 10 material presets, model-level material, material comments, colored part grouping                                                              |
+| Models      | Mine/draft/published/shared filters, marketplace search/category/tag/sort, read-only share preview                                               |
+| Assets      | ASCII STL import as Base64-backed model asset, real STL/OBJ export from mesh data, export preview with volume/triangles/unit                     |
+| Admin       | Users, models, templates, orders, feedback, activation code views and basic admin actions                                                        |
+| Mobile/UI   | Collapsible panels on narrow screens, shared toast/confirm/loading/empty/error components, keyboard and aria improvements                        |
+| Quality     | Vitest suites, Nest HTTP integration tests, Playwright E2E/screenshots, `pnpm ci:quality`, GitHub Actions workflow                               |
+| Engineering | Docker/Compose, PM2, Nginx sample, Swagger/OpenAPI, static cache headers, redacted logs, Prettier/ESLint                                         |
 
 ## Quick Start
 
@@ -73,12 +78,12 @@ Edit `.env` before production use. For local development, the example values are
 
 Default URLs:
 
-| Service | URL |
-| --- | --- |
-| App | http://127.0.0.1:3000 |
+| Service    | URL                              |
+| ---------- | -------------------------------- |
+| App        | http://127.0.0.1:3000            |
 | API health | http://127.0.0.1:3000/api/health |
 
-`start.sh` checks the selected port before installing/building/starting. If the port is occupied, it exits with the owning PID and suggests an alternate command. It only kills a listener when `HICAD_KILL_PORT=1` is set explicitly.
+`start.sh` checks the selected port before installing/building/starting. If the port is occupied by a previous HiCAD listener from this checkout, it stops that process automatically and continues. If the listener does not look like this repository, it exits with the owning PID and suggests an alternate command. Set `HICAD_AUTO_KILL_OWN_PORTS=0` to disable automatic cleanup, or use `HICAD_KILL_PORT=1` when you intentionally want to stop any listed listener.
 
 Useful variants:
 
@@ -93,12 +98,14 @@ HICAD_SKIP_PORT_CHECK=1 ./start.sh
 
 ```bash
 pnpm dev          # shared + backend + frontend dev servers
+pnpm format:check # Prettier formatting check
+pnpm lint         # ESLint flat-config check
 pnpm test         # shared, backend, frontend Vitest suites
 pnpm typecheck    # TypeScript and Vue type checks
 pnpm build        # shared -> backend -> frontend production build
 pnpm bundle:check # frontend gzip budget check
 pnpm test:e2e     # Playwright E2E against production build + start.sh
-pnpm ci:quality   # audit + tests + typecheck + build + bundle + E2E
+pnpm ci:quality   # format + lint + audit + tests + typecheck + build + bundle + E2E
 ```
 
 Playwright needs a browser installed once:
@@ -117,22 +124,29 @@ pnpm exec playwright install --with-deps chromium
 
 Copy `.env.example` to `.env`. The most important settings are:
 
-| Variable | Purpose |
-| --- | --- |
-| `PORT`, `HOST` | Backend/app bind address for production-style local service |
-| `NODE_ENV` | Use `production` for deployed runtime checks |
-| `DATA_DIR` | JSON database directory, defaulting to repository `data/` for local runs |
-| `FRONTEND_DIR` | Built frontend directory served by the backend |
-| `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET` | Required random secrets in production, at least 32 characters |
-| `PAY_CALLBACK_SECRET` | Required random payment callback signing secret in production |
-| `DEV_ACTIVATION_CODE` | Local registration activation code |
-| `AI_ADAPTER` | `deepseek`, `openai`, or `qwen` |
-| `DEEPSEEK_API_KEY`, `OPENAI_API_KEY`, `QWEN_API_KEY` | Optional provider keys; missing keys trigger deterministic fallback |
-| `CAD_WORKER_TIMEOUT_MS` | Worker render timeout |
-| `CAD_MAX_CODE_BYTES` | Maximum CAD code size |
-| `UPLOAD_MAX_STL_BYTES` | STL import payload limit |
+| Variable                                             | Purpose                                                                  |
+| ---------------------------------------------------- | ------------------------------------------------------------------------ |
+| `PORT`, `HOST`                                       | Backend/app bind address for production-style local service              |
+| `NODE_ENV`                                           | Use `production` for deployed runtime checks                             |
+| `DATA_DIR`                                           | JSON database directory, defaulting to repository `data/` for local runs |
+| `FRONTEND_DIR`                                       | Built frontend directory served by the backend                           |
+| `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`            | Required random secrets in production, at least 32 characters            |
+| `PAY_CALLBACK_SECRET`                                | Required random payment callback signing secret in production            |
+| `DEV_ACTIVATION_CODE`                                | Local registration activation code                                       |
+| `AI_ADAPTER`                                         | `deepseek`, `openai`, or `qwen`                                          |
+| `DEEPSEEK_API_KEY`, `OPENAI_API_KEY`, `QWEN_API_KEY` | Optional provider keys; missing keys trigger deterministic fallback      |
+| `CAD_WORKER_TIMEOUT_MS`                              | Worker render timeout                                                    |
+| `CAD_MAX_CODE_BYTES`                                 | Maximum CAD code size                                                    |
+| `UPLOAD_MAX_STL_BYTES`                               | STL import payload limit                                                 |
 
 The backend refuses unsafe production defaults for JWT/payment secrets. Keep `.env` private.
+
+API documentation is available from the running service:
+
+| Document     | URL                                    |
+| ------------ | -------------------------------------- |
+| Swagger UI   | http://127.0.0.1:3000/api/docs         |
+| OpenAPI JSON | http://127.0.0.1:3000/api/openapi.json |
 
 ## AI Pipeline
 
@@ -200,22 +214,25 @@ pnpm ci:quality
 
 It runs:
 
-1. `pnpm audit:prod` against the official npm registry with `--audit-level high`;
-2. shared/backend/frontend tests;
-3. TypeScript and Vue type checks;
-4. production build;
-5. frontend gzip bundle budget check;
-6. Playwright E2E with `start.sh`.
+1. `pnpm format:check`;
+2. `pnpm lint`;
+3. `pnpm audit:prod` against the official npm registry with `--audit-level high`;
+4. shared/backend/frontend tests;
+5. TypeScript and Vue type checks;
+6. production build;
+7. frontend gzip bundle budget check;
+8. Playwright E2E with `start.sh`.
 
 Bundle budgets are enforced by `scripts/check-frontend-bundle.mjs`:
 
-| Bundle | Gzip budget |
-| --- | ---: |
-| entry `index-*.js` | <= 500 KiB |
-| async `monaco-editor-*` chunk | <= 1.2 MiB |
-| total JS | <= 2.0 MiB |
+| Bundle                        | Gzip budget |
+| ----------------------------- | ----------: |
+| entry `index-*.js`            |  <= 500 KiB |
+| async `monaco-editor-*` chunk |  <= 1.2 MiB |
+| async `three-*` chunk         |  <= 700 KiB |
+| total JS                      |  <= 2.0 MiB |
 
-The GitHub Actions workflow in `.github/workflows/ci.yml` runs the same quality gate.
+The GitHub Actions workflow in `.github/workflows/ci.yml` runs install, format, lint, audit, test, typecheck, build, bundle, and E2E as explicit steps.
 
 ## Deployment Notes
 
@@ -234,6 +251,16 @@ pnpm --filter @hicad/backend start
 
 Put Nginx/Caddy in front of the backend and proxy both `/` and `/api` to the same Node service. SSE endpoints need proxy buffering disabled.
 
+Docker and PM2 examples are included:
+
+```bash
+docker compose up --build app
+docker compose --profile postgres config
+pm2 start ecosystem.config.cjs
+```
+
+The optional Compose `postgres` profile is reserved for a future repository migration. The current app still uses the JSON data layer unless code is changed to use PostgreSQL.
+
 The current payment provider is a signed mock provider. Do not treat it as a real payment integration. See `docs/PAYMENT_PROVIDERS.md` before integrating WeChat Pay, Alipay, Stripe, or another provider.
 
 ## Security Notes
@@ -249,7 +276,6 @@ The current payment provider is a signed mock provider. Do not treat it as a rea
 
 The P1 frontend, CAD/rendering, and testing/quality milestones are implemented in this repository. Remaining larger follow-ups include:
 
-- Docker and compose deployment;
 - PostgreSQL or another durable multi-user database backend;
 - stronger real STL mesh preview/import handling beyond Base64 persistence;
 - deeper CAD operation coverage and richer geometry inspection;

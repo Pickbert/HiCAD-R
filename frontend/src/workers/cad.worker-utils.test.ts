@@ -4,7 +4,9 @@ import { createRenderTimeoutController, toStructuredWorkerError } from './cad.wo
 
 describe('CAD worker utilities', () => {
   it('maps runtime and generic errors to structured worker errors', () => {
-    expect(toStructuredWorkerError(new CadRuntimeError('UNSAFE_CODE', 'Blocked unsafe token: fetch', 'No network'))).toEqual({
+    expect(
+      toStructuredWorkerError(new CadRuntimeError('UNSAFE_CODE', 'Blocked unsafe token: fetch', 'No network'))
+    ).toEqual({
       code: 'UNSAFE_CODE',
       message: 'Blocked unsafe token: fetch',
       hint: 'No network'

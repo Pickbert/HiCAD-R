@@ -33,7 +33,9 @@ module.exports = { main }
   });
 
   it('blocks dangerous browser and dynamic execution tokens before running code', () => {
-    expect(() => runCadRuntime({ code: 'function main() { return fetch("https://example.com") }' })).toThrow(/unsafe token/i);
+    expect(() => runCadRuntime({ code: 'function main() { return fetch("https://example.com") }' })).toThrow(
+      /unsafe token/i
+    );
     expect(() => runCadRuntime({ code: 'function main() { return Function("return 1")() }' })).toThrow(/unsafe token/i);
   });
 

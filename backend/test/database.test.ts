@@ -21,7 +21,12 @@ describe('JsonDatabaseService', () => {
       Array.from({ length: 8 }, (_, index) =>
         db.mutate(async (state) => {
           await new Promise((resolve) => setTimeout(resolve, 2));
-          state.feedbacks.push({ id: String(index), content: `f${index}`, createdAt: new Date(0).toISOString(), status: 'open' } as any);
+          state.feedbacks.push({
+            id: String(index),
+            content: `f${index}`,
+            createdAt: new Date(0).toISOString(),
+            status: 'open'
+          } as any);
         })
       )
     );

@@ -11,7 +11,18 @@ function controller() {
     activationCodes: [],
     models: [],
     templates: [],
-    orders: [{ orderNo: 'ORD-1', userId: 'u1', plan: 'pro', amount: 100, status: 'pending', provider: 'mock', createdAt: new Date(0).toISOString(), updatedAt: new Date(0).toISOString() }],
+    orders: [
+      {
+        orderNo: 'ORD-1',
+        userId: 'u1',
+        plan: 'pro',
+        amount: 100,
+        status: 'pending',
+        provider: 'mock',
+        createdAt: new Date(0).toISOString(),
+        updatedAt: new Date(0).toISOString()
+      }
+    ],
     feedbacks: [],
     aiHistory: [],
     shareTokens: [],
@@ -35,9 +46,17 @@ describe('PayController callback boundaries', () => {
 
     await expect(Promise.resolve().then(() => pay.callback(body, 'bad'))).rejects.toBeInstanceOf(UnauthorizedException);
     const mismatch = { ...body, amount: 1 };
-    await expect(Promise.resolve().then(() => pay.callback(mismatch, createPaymentSignature(mismatch, process.env.PAY_CALLBACK_SECRET)))).rejects.toBeInstanceOf(UnauthorizedException);
+    await expect(
+      Promise.resolve().then(() =>
+        pay.callback(mismatch, createPaymentSignature(mismatch, process.env.PAY_CALLBACK_SECRET))
+      )
+    ).rejects.toBeInstanceOf(UnauthorizedException);
     const missing = { ...body, orderNo: 'missing' };
-    await expect(Promise.resolve().then(() => pay.callback(missing, createPaymentSignature(missing, process.env.PAY_CALLBACK_SECRET)))).rejects.toBeInstanceOf(NotFoundException);
+    await expect(
+      Promise.resolve().then(() =>
+        pay.callback(missing, createPaymentSignature(missing, process.env.PAY_CALLBACK_SECRET))
+      )
+    ).rejects.toBeInstanceOf(NotFoundException);
   });
 
   it('handles duplicate paid callbacks idempotently', async () => {

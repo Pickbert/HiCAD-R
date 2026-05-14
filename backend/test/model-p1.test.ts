@@ -43,7 +43,10 @@ describe('ModelService P1 behavior', () => {
   it('keeps draft changes separate from published snapshots and records revisions', async () => {
     const { models } = service();
     const owner = user();
-    const model = await models.create(owner, { title: 'Box', code: 'const boxWidth = 10 // 宽度 unit:mm min:1 max:20' });
+    const model = await models.create(owner, {
+      title: 'Box',
+      code: 'const boxWidth = 10 // 宽度 unit:mm min:1 max:20'
+    });
     await models.publish(owner, model.id);
     await models.update(owner, model.id, { code: 'const boxWidth = 18 // 宽度 unit:mm min:1 max:20' });
 
@@ -58,7 +61,10 @@ describe('ModelService P1 behavior', () => {
     const { models } = service();
     const owner = user();
     const viewer = user('viewer');
-    const model = await models.create(owner, { title: 'Box', code: 'const boxWidth = 10 // 宽度 unit:mm min:1 max:20' });
+    const model = await models.create(owner, {
+      title: 'Box',
+      code: 'const boxWidth = 10 // 宽度 unit:mm min:1 max:20'
+    });
     await models.publish(owner, model.id);
     const share = await models.share(owner, model.id, 60);
     await models.like(model.id, viewer);
@@ -71,7 +77,10 @@ describe('ModelService P1 behavior', () => {
   it('records exports against the daily quota and audit log', async () => {
     const { models, state } = service();
     const owner = user();
-    const model = await models.create(owner, { title: 'Box', code: 'const boxWidth = 10 // 宽度 unit:mm min:1 max:20' });
+    const model = await models.create(owner, {
+      title: 'Box',
+      code: 'const boxWidth = 10 // 宽度 unit:mm min:1 max:20'
+    });
 
     await models.recordExport(owner, model.id, 'stl');
 
@@ -103,7 +112,11 @@ describe('ModelService P1 behavior', () => {
     const owner = user();
     const unsafeStl = Buffer.from('solid x\n<script>alert(1)</script>\nendsolid x').toString('base64');
 
-    await expect(models.create(owner, { title: '<script>x</script>', code: 'const boxWidth = 10 // 宽度 unit:mm min:1 max:20' })).rejects.toThrow(/unsafe content/i);
-    await expect(models.importStl(owner, { title: 'Bad STL', filename: 'bad.stl', dataBase64: unsafeStl })).rejects.toThrow(/unsafe stl/i);
+    await expect(
+      models.create(owner, { title: '<script>x</script>', code: 'const boxWidth = 10 // 宽度 unit:mm min:1 max:20' })
+    ).rejects.toThrow(/unsafe content/i);
+    await expect(
+      models.importStl(owner, { title: 'Bad STL', filename: 'bad.stl', dataBase64: unsafeStl })
+    ).rejects.toThrow(/unsafe stl/i);
   });
 });

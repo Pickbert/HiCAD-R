@@ -6,6 +6,7 @@ const dist = new URL('../frontend/dist/assets/', import.meta.url);
 const limits = {
   entryGzipBytes: 500 * 1024,
   monacoGzipBytes: 1.2 * 1024 * 1024,
+  threeGzipBytes: 700 * 1024,
   totalJsGzipBytes: 2 * 1024 * 1024
 };
 
@@ -28,22 +29,31 @@ const sizes = await Promise.all(
 
 const entryChunks = sizes.filter((item) => /^index-[A-Za-z0-9_-]+\.js$/.test(item.file));
 const monacoChunks = sizes.filter((item) => item.file.startsWith('monaco-editor-'));
+const threeChunks = sizes.filter((item) => item.file.startsWith('three-'));
 const totalJsGzipBytes = sizes.reduce((total, item) => total + item.gzipBytes, 0);
 const maxEntry = maxBy(entryChunks, (item) => item.gzipBytes);
 const maxMonaco = maxBy(monacoChunks, (item) => item.gzipBytes);
+const maxThree = maxBy(threeChunks, (item) => item.gzipBytes);
 
 const failures = [];
 if (!maxEntry) failures.push('Missing entry index-*.js chunk.');
-else if (maxEntry.gzipBytes > limits.entryGzipBytes) failures.push(`${maxEntry.file} gzip ${format(maxEntry.gzipBytes)} exceeds ${format(limits.entryGzipBytes)}.`);
+else if (maxEntry.gzipBytes > limits.entryGzipBytes)
+  failures.push(`${maxEntry.file} gzip ${format(maxEntry.gzipBytes)} exceeds ${format(limits.entryGzipBytes)}.`);
 if (!maxMonaco) failures.push('Missing async monaco-editor chunk.');
-else if (maxMonaco.gzipBytes > limits.monacoGzipBytes) failures.push(`${maxMonaco.file} gzip ${format(maxMonaco.gzipBytes)} exceeds ${format(limits.monacoGzipBytes)}.`);
-if (totalJsGzipBytes > limits.totalJsGzipBytes) failures.push(`Total JS gzip ${format(totalJsGzipBytes)} exceeds ${format(limits.totalJsGzipBytes)}.`);
+else if (maxMonaco.gzipBytes > limits.monacoGzipBytes)
+  failures.push(`${maxMonaco.file} gzip ${format(maxMonaco.gzipBytes)} exceeds ${format(limits.monacoGzipBytes)}.`);
+if (!maxThree) failures.push('Missing async three chunk.');
+else if (maxThree.gzipBytes > limits.threeGzipBytes)
+  failures.push(`${maxThree.file} gzip ${format(maxThree.gzipBytes)} exceeds ${format(limits.threeGzipBytes)}.`);
+if (totalJsGzipBytes > limits.totalJsGzipBytes)
+  failures.push(`Total JS gzip ${format(totalJsGzipBytes)} exceeds ${format(limits.totalJsGzipBytes)}.`);
 
 console.log(
   JSON.stringify(
     {
       entry: maxEntry,
       monaco: maxMonaco,
+      three: maxThree,
       totalJsGzipBytes,
       limits
     },

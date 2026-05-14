@@ -17,7 +17,10 @@ async function submit() {
   loading.value = true;
   error.value = '';
   try {
-    const auth = mode.value === 'login' ? await login(email.value, password.value) : await register(email.value, password.value, activationCode.value);
+    const auth =
+      mode.value === 'login'
+        ? await login(email.value, password.value)
+        : await register(email.value, password.value, activationCode.value);
     store.setAuth(auth);
     store.toast('success', `${auth.user.displayName} 已登录`);
     emit('close');
@@ -31,14 +34,30 @@ async function submit() {
 
 <template>
   <div class="modal-backdrop" role="presentation" @click.self="emit('close')">
-    <form class="modal auth-modal" role="dialog" aria-modal="true" aria-labelledby="auth-title" @keydown.esc.prevent="emit('close')" @submit.prevent="submit">
+    <form
+      class="modal auth-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="auth-title"
+      @keydown.esc.prevent="emit('close')"
+      @submit.prevent="submit"
+    >
       <div class="modal-header">
         <strong id="auth-title">{{ mode === 'login' ? '登录 HiCAD' : '注册 HiCAD' }}</strong>
         <button type="button" aria-label="关闭登录弹窗" @click="emit('close')">x</button>
       </div>
       <div class="segmented">
-        <button type="button" :class="{ active: mode === 'login' }" aria-label="切换到登录模式" @click="mode = 'login'">登录</button>
-        <button type="button" :class="{ active: mode === 'register' }" aria-label="切换到注册模式" @click="mode = 'register'">注册</button>
+        <button type="button" :class="{ active: mode === 'login' }" aria-label="切换到登录模式" @click="mode = 'login'">
+          登录
+        </button>
+        <button
+          type="button"
+          :class="{ active: mode === 'register' }"
+          aria-label="切换到注册模式"
+          @click="mode = 'register'"
+        >
+          注册
+        </button>
       </div>
       <label>
         <span>邮箱</span>
@@ -53,7 +72,12 @@ async function submit() {
         <input v-model.trim="activationCode" autocomplete="off" required />
       </label>
       <ErrorState v-if="error" :message="error" />
-      <button class="primary-action" :disabled="loading" type="submit" :aria-label="mode === 'login' ? '登录 HiCAD' : '注册并登录 HiCAD'">
+      <button
+        class="primary-action"
+        :disabled="loading"
+        type="submit"
+        :aria-label="mode === 'login' ? '登录 HiCAD' : '注册并登录 HiCAD'"
+      >
         {{ loading ? '处理中' : mode === 'login' ? '登录' : '注册并登录' }}
       </button>
     </form>

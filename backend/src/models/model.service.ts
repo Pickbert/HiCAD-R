@@ -16,7 +16,15 @@ export class ModelService {
     return this.db.data.models.filter((model) => model.ownerId === user.id).sort(sortNewest);
   }
 
-  market(query: { q?: string; category?: string; tag?: string; tags?: string; sort?: string; featured?: string; source?: string }) {
+  market(query: {
+    q?: string;
+    category?: string;
+    tag?: string;
+    tags?: string;
+    sort?: string;
+    featured?: string;
+    source?: string;
+  }) {
     const keywords = (query.q ?? '')
       .toLowerCase()
       .split(/\s+/)
@@ -172,7 +180,8 @@ export class ModelService {
 
   getShare(token: string): CadModel {
     const share = this.db.data.shareTokens.find((entry) => entry.token === token && !entry.revokedAt);
-    if (!share || (share.expiresAt && Date.parse(share.expiresAt) < Date.now())) throw new NotFoundException('share not found');
+    if (!share || (share.expiresAt && Date.parse(share.expiresAt) < Date.now()))
+      throw new NotFoundException('share not found');
     share.accessCount += 1;
     share.lastAccessedAt = nowIso();
     const model = this.db.data.models.find((entry) => entry.id === share.modelId);
@@ -189,7 +198,11 @@ export class ModelService {
     return model;
   }
 
-  async recordExport(user: StoredUser, id: string, format: 'stl' | 'obj'): Promise<{ ok: true; format: 'stl' | 'obj' }> {
+  async recordExport(
+    user: StoredUser,
+    id: string,
+    format: 'stl' | 'obj'
+  ): Promise<{ ok: true; format: 'stl' | 'obj' }> {
     this.get(id, user);
     return this.db.mutate((state) => {
       consumeDailyQuota(state, user, 'exports');
@@ -219,7 +232,9 @@ export class ModelService {
   }
 
   async restoreRevision(user: StoredUser, id: string, revisionId: string): Promise<CadModel> {
-    const revision = (this.db.data.modelRevisions ?? []).find((entry) => entry.id === revisionId && entry.modelId === id);
+    const revision = (this.db.data.modelRevisions ?? []).find(
+      (entry) => entry.id === revisionId && entry.modelId === id
+    );
     if (!revision) throw new NotFoundException('revision not found');
     return this.update(user, id, {
       title: revision.title,
@@ -228,7 +243,10 @@ export class ModelService {
     });
   }
 
-  async importStl(user: StoredUser, dto: { title: string; filename: string; dataBase64: string; tags?: string[] }): Promise<CadModel> {
+  async importStl(
+    user: StoredUser,
+    dto: { title: string; filename: string; dataBase64: string; tags?: string[] }
+  ): Promise<CadModel> {
     const maxBytes = Number(process.env.UPLOAD_MAX_STL_BYTES ?? 10_485_760);
     if (!/\.stl$/i.test(dto.filename)) throw new BadRequestException('Only .stl files are supported');
     const bytes = Buffer.from(dto.dataBase64, 'base64');
@@ -273,7 +291,18 @@ function normalizeTags(tags: string[] | undefined): string[] {
 }
 
 function normalizeMaterial(material: string | undefined): MaterialPreset {
-  const allowed: MaterialPreset[] = ['cad-blue', 'silver', 'gold', 'copper', 'ceramic', 'glass', 'neon', 'matte-black', 'white', 'steel'];
+  const allowed: MaterialPreset[] = [
+    'cad-blue',
+    'silver',
+    'gold',
+    'copper',
+    'ceramic',
+    'glass',
+    'neon',
+    'matte-black',
+    'white',
+    'steel'
+  ];
   return allowed.includes(material as MaterialPreset) ? (material as MaterialPreset) : 'cad-blue';
 }
 
@@ -299,7 +328,8 @@ function sortMarket(sort = 'latest') {
     return (left: CadModel, right: CadModel) => right.likes - left.likes || sortNewest(left, right);
   }
   if (sort === 'featured') {
-    return (left: CadModel, right: CadModel) => Number(Boolean(right.publishedSnapshot)) - Number(Boolean(left.publishedSnapshot)) || sortNewest(left, right);
+    return (left: CadModel, right: CadModel) =>
+      Number(Boolean(right.publishedSnapshot)) - Number(Boolean(left.publishedSnapshot)) || sortNewest(left, right);
   }
   return sortNewest;
 }

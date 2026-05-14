@@ -6,7 +6,11 @@ export function createPaymentSignature(payload: SignablePaymentPayload, secret: 
   return createHmac('sha256', secret).update(canonicalize(payload)).digest('hex');
 }
 
-export function verifyPaymentSignature(payload: SignablePaymentPayload, signature: string | undefined, secret: string): boolean {
+export function verifyPaymentSignature(
+  payload: SignablePaymentPayload,
+  signature: string | undefined,
+  secret: string
+): boolean {
   if (!signature || !secret) {
     return false;
   }

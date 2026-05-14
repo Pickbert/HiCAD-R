@@ -18,7 +18,16 @@ import type {
 
 @Injectable()
 export class JsonDatabaseService
-  implements OnModuleInit, UserRepository, ModelRepository, TemplateRepository, OrderRepository, FeedbackRepository, ActivationCodeRepository, AuditRepository, QuotaRepository
+  implements
+    OnModuleInit,
+    UserRepository,
+    ModelRepository,
+    TemplateRepository,
+    OrderRepository,
+    FeedbackRepository,
+    ActivationCodeRepository,
+    AuditRepository,
+    QuotaRepository
 {
   private state: DatabaseState | undefined;
   private writeQueue: Promise<unknown> = Promise.resolve();
@@ -189,7 +198,9 @@ export class JsonDatabaseService
         source: model.source ?? 'manual',
         revisionCount: model.revisionCount ?? 0
       })),
-      templates: input.templates?.length ? input.templates.map((template) => this.normalizeTemplate(template as any)) : await this.loadTemplates(),
+      templates: input.templates?.length
+        ? input.templates.map((template) => this.normalizeTemplate(template as any))
+        : await this.loadTemplates(),
       orders: input.orders ?? [],
       feedbacks: (input.feedbacks ?? []).map((feedback) => ({
         ...feedback,

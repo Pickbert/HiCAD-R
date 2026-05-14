@@ -7,7 +7,9 @@ import EmptyState from './ui/EmptyState.vue';
 
 const store = useWorkspaceStore();
 const source = ref<ClosableStream | null>(null);
-const lastPrompt = computed(() => [...store.messages].reverse().find((message) => message.role === 'user')?.text ?? store.prompt);
+const lastPrompt = computed(
+  () => [...store.messages].reverse().find((message) => message.role === 'user')?.text ?? store.prompt
+);
 
 onMounted(() => {
   void loadHistory();
@@ -96,11 +98,27 @@ onBeforeUnmount(() => source.value?.close());
       <option value="qwen">Qwen-Max · 千问</option>
     </select>
     <div class="segmented">
-      <button :class="{ active: store.aiMode === 'generate' }" aria-label="切换到 AI 生成模式" @click="store.aiMode = 'generate'">生成</button>
-      <button :class="{ active: store.aiMode === 'modify' }" aria-label="切换到基于当前代码修改模式" @click="store.aiMode = 'modify'">修改当前代码</button>
+      <button
+        :class="{ active: store.aiMode === 'generate' }"
+        aria-label="切换到 AI 生成模式"
+        @click="store.aiMode = 'generate'"
+      >
+        生成
+      </button>
+      <button
+        :class="{ active: store.aiMode === 'modify' }"
+        aria-label="切换到基于当前代码修改模式"
+        @click="store.aiMode = 'modify'"
+      >
+        修改当前代码
+      </button>
     </div>
     <div class="status-track">
-      <span v-for="state in ['start', 'spec', 'retry', 'code', 'done', 'error']" :key="state" :class="{ active: store.aiStatus === state }">
+      <span
+        v-for="state in ['start', 'spec', 'retry', 'code', 'done', 'error']"
+        :key="state"
+        :class="{ active: store.aiStatus === state }"
+      >
         {{ state }}
       </span>
     </div>
@@ -124,7 +142,13 @@ onBeforeUnmount(() => source.value?.close());
     </section>
     <details class="history-box">
       <summary>历史记录 {{ store.aiHistory.length }}</summary>
-      <button v-for="entry in store.aiHistory.slice(0, 6)" :key="entry.id" class="history-item" :aria-label="`预览历史生成 ${entry.prompt}`" @click="store.setPendingAiCode(entry.code)">
+      <button
+        v-for="entry in store.aiHistory.slice(0, 6)"
+        :key="entry.id"
+        class="history-item"
+        :aria-label="`预览历史生成 ${entry.prompt}`"
+        @click="store.setPendingAiCode(entry.code)"
+      >
         <strong>{{ entry.prompt }}</strong>
         <small>{{ entry.provider }} · {{ new Date(entry.createdAt).toLocaleString() }}</small>
       </button>
@@ -139,6 +163,8 @@ onBeforeUnmount(() => source.value?.close());
         {{ store.isGenerating ? '处理中' : store.aiMode === 'modify' ? '修改' : '发送' }}
       </button>
     </div>
-    <button :disabled="store.isGenerating || !lastPrompt" aria-label="根据上次提示重新生成" @click="regenerate">重新生成</button>
+    <button :disabled="store.isGenerating || !lastPrompt" aria-label="根据上次提示重新生成" @click="regenerate">
+      重新生成
+    </button>
   </aside>
 </template>

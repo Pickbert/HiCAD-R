@@ -1,5 +1,15 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { apiFetch, buildMarketPath, fileToBase64Payload } from './api.js';
+import {
+  apiFetch,
+  buildMarketPath,
+  createAdminActivationCodes,
+  fileToBase64Payload,
+  publishModel,
+  recordModelExport,
+  saveModel,
+  shareModel,
+  unpublishModel
+} from './api.js';
 
 describe('api helpers', () => {
   afterEach(() => {
@@ -9,18 +19,30 @@ describe('api helpers', () => {
   it('refreshes an expired access token once and retries the original request', async () => {
     const fetchMock = vi
       .fn()
-      .mockResolvedValueOnce(new Response(JSON.stringify({ code: 'UNAUTHORIZED', message: 'expired' }), { status: 401 }))
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ code: 'UNAUTHORIZED', message: 'expired' }), { status: 401 })
+      )
       .mockResolvedValueOnce(
         new Response(
           JSON.stringify({
             accessToken: 'access-2',
             refreshToken: 'refresh-2',
-            user: { id: 'u1', email: 'demo@hicad.local', displayName: 'Demo', role: 'user', tier: 'pro', createdAt: '', updatedAt: '' }
+            user: {
+              id: 'u1',
+              email: 'demo@hicad.local',
+              displayName: 'Demo',
+              role: 'user',
+              tier: 'pro',
+              createdAt: '',
+              updatedAt: ''
+            }
           }),
           { status: 200, headers: { 'content-type': 'application/json' } }
         )
       )
-      .mockResolvedValueOnce(new Response(JSON.stringify({ ok: true }), { status: 200, headers: { 'content-type': 'application/json' } }));
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ ok: true }), { status: 200, headers: { 'content-type': 'application/json' } })
+      );
     vi.stubGlobal('fetch', fetchMock);
     const refreshed: string[] = [];
 
@@ -55,5 +77,45 @@ describe('api helpers', () => {
       dataBase64: 'c29saWQgYm94CmVuZHNvbGlkIGJveAo=',
       tags: ['STL']
     });
+  });
+
+  it('wraps core model mutations with typed API helpers', async () => {
+    const fetchMock = vi.fn().mockImplementation(() =>
+      Promise.resolve(
+        new Response(JSON.stringify({ id: 'model-1', token: 'share-token', codes: ['HICAD-1'] }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' }
+        })
+      )
+    );
+    vi.stubGlobal('fetch', fetchMock);
+    const auth = { accessToken: 'access-token' };
+
+    await saveModel(
+      {
+        title: 'Box',
+        description: 'Demo',
+        code: 'function main(){}',
+        material: 'steel',
+        category: 'workspace',
+        tags: ['HiCAD']
+      },
+      auth
+    );
+    await publishModel('model-1', auth);
+    await unpublishModel('model-1', auth);
+    await shareModel('model-1', auth);
+    await recordModelExport('model-1', 'obj', auth);
+    await createAdminActivationCodes({ prefix: 'HICAD', count: 2, tier: 'pro' }, auth);
+
+    expect(fetchMock.mock.calls.map((call) => [call[0], call[1]?.method])).toEqual([
+      ['/api/models', 'POST'],
+      ['/api/models/model-1/publish', 'POST'],
+      ['/api/models/model-1/unpublish', 'POST'],
+      ['/api/models/model-1/share', 'POST'],
+      ['/api/models/model-1/export', 'POST'],
+      ['/api/admin/activation-codes/batch', 'POST']
+    ]);
+    expect((fetchMock.mock.calls[0][1]?.headers as Headers).get('authorization')).toBe('Bearer access-token');
   });
 });

@@ -21,7 +21,9 @@ describe('AI pipeline', () => {
   it('builds prompt messages and validates strict design spec JSON', () => {
     const messages = buildDesignMessages('机械臂 120x80x60mm', 'arm');
     expect(messages[0].content).toContain('strict JSON');
-    expect(parseDesignSpecJson('{"kind":"arm","title":"机械臂","width":120,"depth":80,"height":60,"material":"steel"}')).toMatchObject({
+    expect(
+      parseDesignSpecJson('{"kind":"arm","title":"机械臂","width":120,"depth":80,"height":60,"material":"steel"}')
+    ).toMatchObject({
       kind: 'arm',
       width: 120
     });
@@ -32,6 +34,8 @@ describe('AI pipeline', () => {
     expect(() => validateCadCodeSafety('fetch("https://example.com")')).toThrow(/blocked token/);
     expect(() => validateCadCodeSafety('localStorage.setItem("x", "y")')).toThrow(/blocked token/);
     expect(() => validateCadCodeSafety('importScripts("x.js")')).toThrow(/blocked token/);
-    expect(() => validateCadCodeSafety('// @material: gold\nconst boxWidth = 10 // 宽度 unit:mm min:1 max:20')).not.toThrow();
+    expect(() =>
+      validateCadCodeSafety('// @material: gold\nconst boxWidth = 10 // 宽度 unit:mm min:1 max:20')
+    ).not.toThrow();
   });
 });

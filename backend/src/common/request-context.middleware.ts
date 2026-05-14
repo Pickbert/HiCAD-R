@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { redactSensitiveData } from '../security/redaction.js';
 
 interface RequestLike {
   requestId?: string;
@@ -22,15 +23,17 @@ export function requestContextMiddleware(request: RequestLike, response: Respons
     const elapsedMs = Date.now() - (request.startedAt ?? Date.now());
     if (elapsedMs > Number(process.env.SLOW_REQUEST_MS ?? 1000)) {
       console.warn(
-        JSON.stringify({
-          level: 'warn',
-          event: 'slow_request',
-          requestId: request.requestId,
-          method: request.method,
-          path: request.path,
-          statusCode: response.statusCode,
-          elapsedMs
-        })
+        JSON.stringify(
+          redactSensitiveData({
+            level: 'warn',
+            event: 'slow_request',
+            requestId: request.requestId,
+            method: request.method,
+            path: request.path,
+            statusCode: response.statusCode,
+            elapsedMs
+          })
+        )
       );
     }
   });

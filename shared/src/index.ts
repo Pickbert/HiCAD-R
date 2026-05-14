@@ -128,9 +128,7 @@ export function parseCadParameters(code: string): CadParameter[] {
     .filter((match): match is RegExpExecArray => Boolean(match))
     .map((match) => {
       const [, name, rawValue, rawLabel, rawUnit, rawMin, rawMax, rawStep] = match;
-      const label = rawLabel
-        .replace(/\s*unit:[^\s]+.*/, '')
-        .trim();
+      const label = rawLabel.replace(/\s*unit:[^\s]+.*/, '').trim();
       const value = Number(rawValue);
       return {
         name,

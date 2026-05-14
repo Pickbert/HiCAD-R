@@ -1,0 +1,55 @@
+services:
+  app:
+    build:
+      context: .
+    image: hicad-r:local
+    ports:
+      - '${PORT:-3000}:3000'
+    environment:
+      NODE_ENV: ${NODE_ENV:-test}
+      HOST: 0.0.0.0
+      PORT: 3000
+      DATA_DIR: /app/data
+      FRONTEND_DIR: /app/frontend/dist
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-local-docker-access-secret-at-least-32-chars}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-local-docker-refresh-secret-at-least-32-chars}
+      PAY_CALLBACK_SECRET: ${PAY_CALLBACK_SECRET:-local-docker-pay-callback-secret-32-chars}
+      DEV_ACTIVATION_CODE: ${DEV_ACTIVATION_CODE:-docker-local-code}
+      AI_ADAPTER: ${AI_ADAPTER:-mock}
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      QWEN_API_KEY: ${QWEN_API_KEY:-}
+    volumes:
+      - hicad_data:/app/data
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          'node -e "fetch(''http://127.0.0.1:3000/api/health'').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"'
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16-alpine
+    profiles: ['postgres']
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-hicad}
+      POSTGRES_USER: ${POSTGRES_USER:-hicad}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-hicad-local-password}
+    ports:
+      - '${POSTGRES_PORT:-5432}:5432'
+    volumes:
+      - hicad_postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-hicad} -d ${POSTGRES_DB:-hicad}']
+      interval: 30s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  hicad_data:
+  hicad_postgres:

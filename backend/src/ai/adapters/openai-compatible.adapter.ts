@@ -1,5 +1,12 @@
 import type { AiProvider } from '@hicad/shared';
-import { AiAdapter, AiCompleteJsonRequest, AiProviderError, AiRetryEvent, AiStreamTextRequest, AdapterOptions } from './types.js';
+import {
+  AiAdapter,
+  AiCompleteJsonRequest,
+  AiProviderError,
+  AiRetryEvent,
+  AiStreamTextRequest,
+  AdapterOptions
+} from './types.js';
 
 const defaultRetryDelays = [2000, 4000, 8000];
 
@@ -35,7 +42,11 @@ export class OpenAiCompatibleAdapter implements AiAdapter {
     try {
       return JSON.parse(extractJsonObject(content)) as T;
     } catch (error) {
-      throw new AiProviderError(`Provider returned invalid JSON: ${error instanceof Error ? error.message : String(error)}`, this.provider, this.model);
+      throw new AiProviderError(
+        `Provider returned invalid JSON: ${error instanceof Error ? error.message : String(error)}`,
+        this.provider,
+        this.model
+      );
     }
   }
 
@@ -101,7 +112,13 @@ export class OpenAiCompatibleAdapter implements AiAdapter {
         signal: controller.signal
       });
       if (!response.ok) {
-        throw new AiProviderError(`Provider returned HTTP ${response.status}`, this.provider, request.model ?? this.model, response.status, isRetryableStatus(response.status));
+        throw new AiProviderError(
+          `Provider returned HTTP ${response.status}`,
+          this.provider,
+          request.model ?? this.model,
+          response.status,
+          isRetryableStatus(response.status)
+        );
       }
       return response.json();
     } catch (error) {

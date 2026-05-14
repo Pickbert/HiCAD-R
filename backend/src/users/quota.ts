@@ -9,7 +9,12 @@ export const TIER_QUOTA_LIMITS: Record<StoredUser['tier'], Record<QuotaMetric, n
   team: { aiCalls: 2000, modelCreates: 5000, exports: 2000 }
 };
 
-export function consumeDailyQuota(state: DatabaseState, user: StoredUser, metric: QuotaMetric, now = new Date()): UserQuota {
+export function consumeDailyQuota(
+  state: DatabaseState,
+  user: StoredUser,
+  metric: QuotaMetric,
+  now = new Date()
+): UserQuota {
   const date = now.toISOString().slice(0, 10);
   const limit = TIER_QUOTA_LIMITS[user.tier][metric];
   let quota = state.quotas.find((entry) => entry.userId === user.id && entry.date === date);

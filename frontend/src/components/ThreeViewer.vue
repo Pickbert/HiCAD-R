@@ -3,7 +3,12 @@ import * as THREE from 'three';
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import type { CameraPreset } from '../stores/workspace.js';
 import { useWorkspaceStore } from '../stores/workspace.js';
-import { buildGeometryFromWorkerMesh, computeMeshStats, mergeWorkerMeshesByMaterial, type WorkerMesh } from '../utils/mesh.js';
+import {
+  buildGeometryFromWorkerMesh,
+  computeMeshStats,
+  mergeWorkerMeshesByMaterial,
+  type WorkerMesh
+} from '../utils/mesh.js';
 import { createRenderTimeoutController } from '../workers/cad.worker-utils.js';
 
 const store = useWorkspaceStore();
@@ -166,7 +171,10 @@ function renderMeshes(workerMeshes: WorkerMesh[]) {
     scene.add(item);
     renderObjects.push(item);
     if (store.viewMode === 'xray') {
-      const edges = new THREE.LineSegments(new THREE.EdgesGeometry(geometry), new THREE.LineBasicMaterial({ color: 0xb9d8ff, transparent: true, opacity: 0.85 }));
+      const edges = new THREE.LineSegments(
+        new THREE.EdgesGeometry(geometry),
+        new THREE.LineBasicMaterial({ color: 0xb9d8ff, transparent: true, opacity: 0.85 })
+      );
       scene.add(edges);
       renderObjects.push(edges);
     }
@@ -194,7 +202,10 @@ function setupSceneLighting() {
   const fillLight = new THREE.DirectionalLight(0x7fb7ff, 0.85);
   fillLight.position.set(-180, 140, 120);
   scene.add(fillLight);
-  shadowPlane = new THREE.Mesh(new THREE.PlaneGeometry(620, 620), new THREE.ShadowMaterial({ color: 0x000000, opacity: 0.18 }));
+  shadowPlane = new THREE.Mesh(
+    new THREE.PlaneGeometry(620, 620),
+    new THREE.ShadowMaterial({ color: 0x000000, opacity: 0.18 })
+  );
   shadowPlane.position.z = -0.5;
   shadowPlane.receiveShadow = true;
   scene.add(shadowPlane);
@@ -221,7 +232,11 @@ function ensureCameraForMode() {
     return;
   }
   const wantsPlan = store.viewMode === 'plan';
-  if ((wantsPlan && camera instanceof THREE.OrthographicCamera) || (!wantsPlan && camera instanceof THREE.PerspectiveCamera)) return;
+  if (
+    (wantsPlan && camera instanceof THREE.OrthographicCamera) ||
+    (!wantsPlan && camera instanceof THREE.PerspectiveCamera)
+  )
+    return;
   camera = createCamera();
 }
 
@@ -402,18 +417,50 @@ function materialColor(material: string): number {
   <section class="viewer-panel">
     <div class="viewer-toolbar">
       <div class="mode-tabs" role="tablist" aria-label="视图模式">
-        <button :class="{ active: store.viewMode === 'solid' }" aria-label="切换到实体视图" @click="store.setViewMode('solid')">实体</button>
-        <button :class="{ active: store.viewMode === 'wireframe' }" aria-label="切换到线框视图" @click="store.setViewMode('wireframe')">线框</button>
-        <button :class="{ active: store.viewMode === 'xray' }" aria-label="切换到 X-Ray 视图" @click="store.setViewMode('xray')">X-Ray</button>
-        <button :class="{ active: store.viewMode === 'plan' }" aria-label="切换到平面 CAD 视图" @click="store.setViewMode('plan')">平面 CAD</button>
+        <button
+          :class="{ active: store.viewMode === 'solid' }"
+          aria-label="切换到实体视图"
+          @click="store.setViewMode('solid')"
+        >
+          实体
+        </button>
+        <button
+          :class="{ active: store.viewMode === 'wireframe' }"
+          aria-label="切换到线框视图"
+          @click="store.setViewMode('wireframe')"
+        >
+          线框
+        </button>
+        <button
+          :class="{ active: store.viewMode === 'xray' }"
+          aria-label="切换到 X-Ray 视图"
+          @click="store.setViewMode('xray')"
+        >
+          X-Ray
+        </button>
+        <button
+          :class="{ active: store.viewMode === 'plan' }"
+          aria-label="切换到平面 CAD 视图"
+          @click="store.setViewMode('plan')"
+        >
+          平面 CAD
+        </button>
       </div>
       <span>{{ dimensionsLabel }} · {{ statsLabel }}</span>
     </div>
     <div class="camera-toolbar" aria-label="相机控制">
-      <button :class="{ active: store.cameraPreset === 'front' }" aria-label="切换到正视图" @click="setPreset('front')">正视</button>
-      <button :class="{ active: store.cameraPreset === 'side' }" aria-label="切换到侧视图" @click="setPreset('side')">侧视</button>
-      <button :class="{ active: store.cameraPreset === 'top' }" aria-label="切换到顶视图" @click="setPreset('top')">顶视</button>
-      <button :class="{ active: store.cameraPreset === 'iso' }" aria-label="切换到等轴测视图" @click="setPreset('iso')">等轴测</button>
+      <button :class="{ active: store.cameraPreset === 'front' }" aria-label="切换到正视图" @click="setPreset('front')">
+        正视
+      </button>
+      <button :class="{ active: store.cameraPreset === 'side' }" aria-label="切换到侧视图" @click="setPreset('side')">
+        侧视
+      </button>
+      <button :class="{ active: store.cameraPreset === 'top' }" aria-label="切换到顶视图" @click="setPreset('top')">
+        顶视
+      </button>
+      <button :class="{ active: store.cameraPreset === 'iso' }" aria-label="切换到等轴测视图" @click="setPreset('iso')">
+        等轴测
+      </button>
       <button aria-label="重置相机视角" @click="resetCamera">重置</button>
     </div>
     <div
@@ -433,15 +480,28 @@ function materialColor(material: string): number {
       <span>垂直 {{ store.renderStats?.boundingBox.depth ?? store.preview.dimensions.depth }} mm</span>
     </div>
     <div v-if="store.annotationSettings.parameterLabels" class="parameter-labels">
-      <span v-for="parameter in visibleParameters" :key="parameter.name">{{ parameter.label }} {{ parameter.value }}{{ parameter.unit }}</span>
+      <span v-for="parameter in visibleParameters" :key="parameter.name"
+        >{{ parameter.label }} {{ parameter.value }}{{ parameter.unit }}</span
+      >
     </div>
     <div v-if="partTree.length" class="part-tree">
       <strong>部件树</strong>
-      <span v-for="part in partTree" :key="part.id">{{ part.name }} · {{ part.material }} · {{ part.triangleCount }} tris</span>
+      <span v-for="part in partTree" :key="part.id"
+        >{{ part.name }} · {{ part.material }} · {{ part.triangleCount }} tris</span
+      >
     </div>
     <div class="viewer-status">
       <span id="viewer-status-text">{{ store.renderError || workerState }}</span>
-      <button v-if="store.autoRenderPaused" aria-label="继续渲染一次大模型" @click="store.resumeAutoRender(); rebuildMesh(true)">继续渲染一次</button>
+      <button
+        v-if="store.autoRenderPaused"
+        aria-label="继续渲染一次大模型"
+        @click="
+          store.resumeAutoRender();
+          rebuildMesh(true);
+        "
+      >
+        继续渲染一次
+      </button>
     </div>
   </section>
 </template>

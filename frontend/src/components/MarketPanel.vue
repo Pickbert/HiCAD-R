@@ -20,8 +20,18 @@ const query = reactive({
   sort: 'latest' as 'latest' | 'popular' | 'mostUsed' | 'featured'
 });
 
-const categories = computed(() => [...new Set([...templates.value.map((item) => item.category), ...models.value.map((item) => item.category)].filter(Boolean))]);
-const tags = computed(() => [...new Set([...templates.value.flatMap((item) => item.tags), ...models.value.flatMap((item) => item.tags)].filter(Boolean))].slice(0, 18));
+const categories = computed(() => [
+  ...new Set(
+    [...templates.value.map((item) => item.category), ...models.value.map((item) => item.category)].filter(Boolean)
+  )
+]);
+const tags = computed(() =>
+  [
+    ...new Set(
+      [...templates.value.flatMap((item) => item.tags), ...models.value.flatMap((item) => item.tags)].filter(Boolean)
+    )
+  ].slice(0, 18)
+);
 const filteredTemplates = computed(() =>
   templates.value
     .filter((template) => !query.category || template.category === query.category)
@@ -33,7 +43,8 @@ const filteredTemplates = computed(() =>
       return keywords.every((keyword) => haystack.includes(keyword));
     })
     .sort((left, right) => {
-      if (query.sort === 'featured') return Number(right.featured) - Number(left.featured) || right.sortOrder - left.sortOrder;
+      if (query.sort === 'featured')
+        return Number(right.featured) - Number(left.featured) || right.sortOrder - left.sortOrder;
       if (query.sort === 'mostUsed' || query.sort === 'popular') return right.usageCount - left.usageCount;
       return Date.parse(right.createdAt) - Date.parse(left.createdAt);
     })
@@ -91,13 +102,25 @@ async function refresh() {
     <LoadingState v-if="loading" label="正在加载市场模型" compact />
     <EmptyState v-else-if="!error && resultCount === 0" title="暂无模型" detail="试试调整搜索词、分类或标签" compact />
     <div class="model-grid">
-      <button v-for="template in filteredTemplates" :key="template.id" class="model-card" :aria-label="`打开模板 ${template.title}`" @click="store.applyTemplate(template)">
+      <button
+        v-for="template in filteredTemplates"
+        :key="template.id"
+        class="model-card"
+        :aria-label="`打开模板 ${template.title}`"
+        @click="store.applyTemplate(template)"
+      >
         <span class="badge">官方模板</span>
         <strong>{{ template.title }}</strong>
         <small>{{ template.description }}</small>
         <small>{{ template.category }} · {{ template.tags.join(', ') }}</small>
       </button>
-      <button v-for="model in models" :key="model.id" class="model-card" :aria-label="`打开市场模型 ${model.title}`" @click="store.applyTemplate(model)">
+      <button
+        v-for="model in models"
+        :key="model.id"
+        class="model-card"
+        :aria-label="`打开市场模型 ${model.title}`"
+        @click="store.applyTemplate(model)"
+      >
         <span class="badge">社区共创</span>
         <strong>{{ model.title }}</strong>
         <small>{{ model.description }}</small>

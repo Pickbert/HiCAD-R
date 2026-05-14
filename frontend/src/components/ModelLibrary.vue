@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
 import type { CadModel } from '@hicad/shared';
-import { apiFetch, listMine } from '../api.js';
+import { listMine, publishModel, shareModel } from '../api.js';
 import { useWorkspaceStore } from '../stores/workspace.js';
 import EmptyState from './ui/EmptyState.vue';
 import ErrorState from './ui/ErrorState.vue';
@@ -15,7 +15,8 @@ const error = ref('');
 const filteredModels = computed(() => {
   if (filter.value === 'draft') return store.myModels.filter((model) => model.visibility === 'private');
   if (filter.value === 'published') return store.myModels.filter((model) => model.visibility === 'public');
-  if (filter.value === 'shared') return store.myModels.filter((model) => model.visibility === 'shared' || Boolean(model.shareToken));
+  if (filter.value === 'shared')
+    return store.myModels.filter((model) => model.visibility === 'shared' || Boolean(model.shareToken));
   return store.myModels;
 });
 
@@ -38,7 +39,7 @@ async function refresh() {
 
 async function publish(model: CadModel) {
   try {
-    await apiFetch(`/models/${model.id}/publish`, { method: 'POST', body: JSON.stringify({ visibility: 'public' }) }, store.apiAuth());
+    await publishModel(model.id, store.apiAuth());
     store.toast('success', '模型已发布');
     await refresh();
   } catch (caught) {
@@ -48,7 +49,7 @@ async function publish(model: CadModel) {
 
 async function share(model: CadModel) {
   try {
-    const shareResult = await apiFetch<{ token: string; url: string }>(`/models/${model.id}/share`, { method: 'POST' }, store.apiAuth());
+    const shareResult = await shareModel(model.id, store.apiAuth());
     store.toast('success', `分享链接 #/share/${shareResult.token}`);
     await refresh();
   } catch (caught) {
@@ -70,22 +71,36 @@ async function share(model: CadModel) {
     <template v-else>
       <div class="segmented toolbar-row">
         <button :class="{ active: filter === 'all' }" aria-label="显示全部模型" @click="filter = 'all'">全部</button>
-        <button :class="{ active: filter === 'draft' }" aria-label="显示草稿模型" @click="filter = 'draft'">草稿</button>
-        <button :class="{ active: filter === 'published' }" aria-label="显示已发布模型" @click="filter = 'published'">已发布</button>
-        <button :class="{ active: filter === 'shared' }" aria-label="显示分享中的模型" @click="filter = 'shared'">分享中</button>
+        <button :class="{ active: filter === 'draft' }" aria-label="显示草稿模型" @click="filter = 'draft'">
+          草稿
+        </button>
+        <button :class="{ active: filter === 'published' }" aria-label="显示已发布模型" @click="filter = 'published'">
+          已发布
+        </button>
+        <button :class="{ active: filter === 'shared' }" aria-label="显示分享中的模型" @click="filter = 'shared'">
+          分享中
+        </button>
       </div>
       <ErrorState v-if="error" :message="error" />
       <LoadingState v-if="loading" label="正在加载我的模型" compact />
       <EmptyState v-else-if="filteredModels.length === 0" title="暂无模型" compact />
       <div class="model-grid">
         <article v-for="model in filteredModels" :key="model.id" class="model-card rich">
-          <span class="badge">{{ model.visibility === 'public' ? '已发布' : model.visibility === 'shared' ? '分享中' : '草稿' }}</span>
+          <span class="badge">{{
+            model.visibility === 'public' ? '已发布' : model.visibility === 'shared' ? '分享中' : '草稿'
+          }}</span>
           <strong>{{ model.title }}</strong>
           <small>{{ model.description || '无描述' }}</small>
           <small>{{ model.category }} · {{ model.tags.join(', ') || '无标签' }}</small>
           <div class="card-actions">
             <button :aria-label="`打开模型 ${model.title}`" @click="store.applyModel(model)">打开</button>
-            <button :disabled="model.visibility === 'public'" :aria-label="`发布模型 ${model.title}`" @click="publish(model)">发布</button>
+            <button
+              :disabled="model.visibility === 'public'"
+              :aria-label="`发布模型 ${model.title}`"
+              @click="publish(model)"
+            >
+              发布
+            </button>
             <button :aria-label="`分享模型 ${model.title}`" @click="share(model)">分享</button>
           </div>
         </article>

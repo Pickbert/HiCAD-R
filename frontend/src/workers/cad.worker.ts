@@ -37,7 +37,10 @@ self.onmessage = (event: MessageEvent<WorkerRequest>) => {
       parts: result.parts,
       stats: result.stats
     };
-    (self as unknown as { postMessage(message: unknown, transfer: Transferable[]): void }).postMessage(response, result.transferables);
+    (self as unknown as { postMessage(message: unknown, transfer: Transferable[]): void }).postMessage(
+      response,
+      result.transferables
+    );
   } catch (error) {
     const response: WorkerFailure = {
       requestId,

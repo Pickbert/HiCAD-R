@@ -26,7 +26,10 @@ export function groupCadParameters(code: string): ParameterGroup[] {
 export function normalizeParameterValue(parameter: ParameterBounds, rawValue: number): number {
   if (!Number.isFinite(rawValue)) return parameter.value;
   const clamped = Math.min(parameter.max, Math.max(parameter.min, rawValue));
-  const stepped = parameter.step > 0 ? Math.round((clamped - parameter.min) / parameter.step) * parameter.step + parameter.min : clamped;
+  const stepped =
+    parameter.step > 0
+      ? Math.round((clamped - parameter.min) / parameter.step) * parameter.step + parameter.min
+      : clamped;
   return Number(Number(stepped).toFixed(4));
 }
 

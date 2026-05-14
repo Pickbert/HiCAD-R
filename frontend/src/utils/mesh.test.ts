@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { buildGeometryFromWorkerMesh, computeMeshStats, mergeWorkerMeshesByMaterial, meshToObj, meshToStl } from './mesh.js';
+import {
+  buildGeometryFromWorkerMesh,
+  computeMeshStats,
+  mergeWorkerMeshesByMaterial,
+  meshToObj,
+  meshToStl
+} from './mesh.js';
 
 describe('mesh utilities', () => {
   it('creates geometry and real STL/OBJ output from worker mesh buffers', () => {

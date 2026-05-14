@@ -33,9 +33,14 @@ export class CadRuntimeError extends Error {
   }
 }
 
-const blockedPattern = /\b(fetch|XMLHttpRequest|WebSocket|importScripts|localStorage|sessionStorage|indexedDB|document|window|globalThis|eval|Function)\b|\bimport\s*\(/;
+const blockedPattern =
+  /\b(fetch|XMLHttpRequest|WebSocket|importScripts|localStorage|sessionStorage|indexedDB|document|window|globalThis|eval|Function)\b|\bimport\s*\(/;
 
-export function runCadRuntime({ code, maxCodeBytes = 200000, maxTriangles = 120000 }: CadRuntimeRequest): CadRuntimeResult {
+export function runCadRuntime({
+  code,
+  maxCodeBytes = 200000,
+  maxTriangles = 120000
+}: CadRuntimeRequest): CadRuntimeResult {
   validateCode(code, maxCodeBytes);
   const result = executeJscad(code);
   const { meshes, parts } = geometriesToMeshes(result, materialFromComment(code));
@@ -51,7 +56,11 @@ export function runCadRuntime({ code, maxCodeBytes = 200000, maxTriangles = 1200
     meshes,
     parts,
     stats,
-    transferables: meshes.flatMap((mesh) => [mesh.positions.buffer, mesh.normals.buffer, mesh.indices.buffer]) as ArrayBuffer[]
+    transferables: meshes.flatMap((mesh) => [
+      mesh.positions.buffer,
+      mesh.normals.buffer,
+      mesh.indices.buffer
+    ]) as ArrayBuffer[]
   };
 }
 
@@ -64,7 +73,11 @@ function validateCode(code: string, maxCodeBytes: number) {
   }
   const blocked = blockedPattern.exec(code);
   if (blocked) {
-    throw new CadRuntimeError('UNSAFE_CODE', `Blocked unsafe token: ${blocked[0]}`, '模型代码不能访问网络、存储或浏览器全局对象。');
+    throw new CadRuntimeError(
+      'UNSAFE_CODE',
+      `Blocked unsafe token: ${blocked[0]}`,
+      '模型代码不能访问网络、存储或浏览器全局对象。'
+    );
   }
 }
 
@@ -79,10 +92,17 @@ function executeJscad(code: string): unknown {
       module,
       exports: module.exports
     };
-    const fn = new Function(...Object.keys(scope), `${code}\n; return module.exports.main ? module.exports.main() : (typeof main === 'function' ? main() : undefined);`);
+    const fn = new Function(
+      ...Object.keys(scope),
+      `${code}\n; return module.exports.main ? module.exports.main() : (typeof main === 'function' ? main() : undefined);`
+    );
     const result = fn(...Object.values(scope));
     if (!result) {
-      throw new CadRuntimeError('NO_GEOMETRY', 'JSCAD code did not return geometry', '请确认代码导出或定义了 main() 并返回几何体。');
+      throw new CadRuntimeError(
+        'NO_GEOMETRY',
+        'JSCAD code did not return geometry',
+        '请确认代码导出或定义了 main() 并返回几何体。'
+      );
     }
     return result;
   } catch (error) {
@@ -94,7 +114,17 @@ function executeJscad(code: string): unknown {
 
 function geometriesToMeshes(result: unknown, fallbackMaterial: string): { meshes: WorkerMesh[]; parts: CadPartNode[] } {
   const partInputs = flattenParts(result);
-  const groups = new Map<string, { color: [number, number, number]; material: string; partIds: Set<string>; positions: number[]; normals: number[]; indices: number[] }>();
+  const groups = new Map<
+    string,
+    {
+      color: [number, number, number];
+      material: string;
+      partIds: Set<string>;
+      positions: number[];
+      normals: number[];
+      indices: number[];
+    }
+  >();
   const parts: CadPartNode[] = [];
   for (const part of partInputs) {
     const polygons = geometries.geom3.toPolygons(part.geometry as any);
@@ -108,7 +138,14 @@ function geometriesToMeshes(result: unknown, fallbackMaterial: string): { meshes
       partColor = color;
       partMaterial = material;
       const key = `${material}:${color.join(',')}`;
-      const group = groups.get(key) ?? { color, material, partIds: new Set<string>(), positions: [], normals: [], indices: [] };
+      const group = groups.get(key) ?? {
+        color,
+        material,
+        partIds: new Set<string>(),
+        positions: [],
+        normals: [],
+        indices: []
+      };
       group.partIds.add(part.id);
       const baseIndex = group.positions.length / 3;
       const normal = polygonNormal(polygon.vertices);
@@ -122,7 +159,13 @@ function geometriesToMeshes(result: unknown, fallbackMaterial: string): { meshes
       }
       groups.set(key, group);
     }
-    parts.push({ id: part.id, name: part.name, material: partMaterial, color: partColor, triangleCount: partTriangleCount });
+    parts.push({
+      id: part.id,
+      name: part.name,
+      material: partMaterial,
+      color: partColor,
+      triangleCount: partTriangleCount
+    });
   }
   const meshes = [...groups.values()].map((group) => ({
     material: group.material,
@@ -133,7 +176,11 @@ function geometriesToMeshes(result: unknown, fallbackMaterial: string): { meshes
     indices: new Uint32Array(group.indices)
   }));
   if (meshes.length === 0) {
-    throw new CadRuntimeError('EMPTY_GEOMETRY', 'No polygons were produced', '模型生成了空几何，请检查布尔运算或参数。');
+    throw new CadRuntimeError(
+      'EMPTY_GEOMETRY',
+      'No polygons were produced',
+      '模型生成了空几何，请检查布尔运算或参数。'
+    );
   }
   return { meshes, parts };
 }
@@ -166,20 +213,18 @@ function materialFromComment(code: string): string {
 }
 
 function materialColor(material: string): [number, number, number] {
-  return (
-    {
-      'cad-blue': [0.31, 0.63, 1],
-      silver: [0.84, 0.87, 0.91],
-      gold: [0.91, 0.72, 0.29],
-      copper: [0.78, 0.47, 0.23],
-      ceramic: [0.94, 0.95, 0.96],
-      glass: [0.6, 0.87, 1],
-      neon: [0.13, 1, 0.67],
-      'matte-black': [0.11, 0.12, 0.16],
-      white: [1, 1, 1],
-      steel: [0.55, 0.6, 0.65]
-    }[material] ?? [0.31, 0.63, 1]
-  ) as [number, number, number];
+  return ({
+    'cad-blue': [0.31, 0.63, 1],
+    silver: [0.84, 0.87, 0.91],
+    gold: [0.91, 0.72, 0.29],
+    copper: [0.78, 0.47, 0.23],
+    ceramic: [0.94, 0.95, 0.96],
+    glass: [0.6, 0.87, 1],
+    neon: [0.13, 1, 0.67],
+    'matte-black': [0.11, 0.12, 0.16],
+    white: [1, 1, 1],
+    steel: [0.55, 0.6, 0.65]
+  }[material] ?? [0.31, 0.63, 1]) as [number, number, number];
 }
 
 function colorToMaterial(color: [number, number, number], fallback: string): string {

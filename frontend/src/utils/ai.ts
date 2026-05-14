@@ -25,9 +25,17 @@ export function mergeAiStreamEvent(messages: UiMessage[], event: AiStreamEvent):
     return next;
   }
   if (event.type === 'done') {
-    return messages.map((message, index) => (index === messages.length - 1 && message.streaming ? { ...message, streaming: false } : message));
+    return messages.map((message, index) =>
+      index === messages.length - 1 && message.streaming ? { ...message, streaming: false } : message
+    );
   }
-  if (event.type === 'error' || event.type === 'retry' || event.type === 'fallback' || event.type === 'start' || event.type === 'spec') {
+  if (
+    event.type === 'error' ||
+    event.type === 'retry' ||
+    event.type === 'fallback' ||
+    event.type === 'start' ||
+    event.type === 'spec'
+  ) {
     const text = event.message ?? statusText(event);
     return text ? [...messages, { role: event.type === 'error' ? 'system' : 'assistant', text }] : messages;
   }
@@ -55,7 +63,8 @@ export function buildCodeDiffSummary(before: string, after: string, maxPreviewLi
 }
 
 export function summarizeAiEvent(event: AiStreamEvent): string {
-  if (event.type === 'retry') return `重试 ${event.attempt ?? 1}/${event.maxAttempts ?? '?'} · ${event.retryInMs ?? 0}ms`;
+  if (event.type === 'retry')
+    return `重试 ${event.attempt ?? 1}/${event.maxAttempts ?? '?'} · ${event.retryInMs ?? 0}ms`;
   if (event.type === 'spec') return '已解析建模规格';
   if (event.type === 'code') return '已生成代码，等待应用';
   if (event.type === 'fallback') return event.message ?? '第三方 AI 不可用，已切换本地 fallback';

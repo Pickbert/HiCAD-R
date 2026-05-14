@@ -3,6 +3,7 @@ node_modules/
 .env
 .DS_Store
 *.log
+.superpowers/
 test-results/
 playwright-report/
 backend/dist/

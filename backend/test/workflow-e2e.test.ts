@@ -31,16 +31,27 @@ describe('HiCAD HTTP workflow', () => {
   });
 
   it('registers, logs in, saves, publishes, shares, and reads a public share', async () => {
-    const register = await auth.register({ email: 'e2e@example.com', password: 'password123', activationCode: 'e2e-code' });
+    const register = await auth.register({
+      email: 'e2e@example.com',
+      password: 'password123',
+      activationCode: 'e2e-code'
+    });
 
     const login = await auth.login({ email: 'e2e@example.com', password: 'password123' });
     const token = login.accessToken;
     expect(token).toBeTruthy();
 
-    const user2 = await auth.register({ email: 'viewer@example.com', password: 'password123', activationCode: 'e2e-code' });
+    const user2 = await auth.register({
+      email: 'viewer@example.com',
+      password: 'password123',
+      activationCode: 'e2e-code'
+    });
     expect(user2.user.role).toBe('user');
 
-    const created = await models.create(register.user as any, { title: 'E2E Box', code: 'const boxWidth = 10 // 宽度 unit:mm min:1 max:20' });
+    const created = await models.create(register.user as any, {
+      title: 'E2E Box',
+      code: 'const boxWidth = 10 // 宽度 unit:mm min:1 max:20'
+    });
 
     const published = await models.publish(register.user as any, created.id);
     const share = await models.share(register.user as any, created.id);

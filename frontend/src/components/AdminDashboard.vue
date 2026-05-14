@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue';
-import { apiFetch, fetchAdminResource } from '../api.js';
+import { createAdminActivationCodes, fetchAdminResource } from '../api.js';
 import { useWorkspaceStore } from '../stores/workspace.js';
 import EmptyState from './ui/EmptyState.vue';
 import ErrorState from './ui/ErrorState.vue';
@@ -61,11 +61,7 @@ async function refreshTab(nextTab = tab.value) {
 
 async function createCodes() {
   try {
-    const result = await apiFetch<{ codes?: string[]; code?: string }>(
-      '/admin/activation-codes/batch',
-      { method: 'POST', body: JSON.stringify(codeForm) },
-      store.apiAuth()
-    );
+    const result = await createAdminActivationCodes(codeForm, store.apiAuth());
     store.toast('success', `已创建 ${(result.codes ?? [result.code]).filter(Boolean).length} 个激活码`);
     await refreshTab('activation-codes');
   } catch (caught) {
@@ -102,7 +98,13 @@ function rowMeta(row: any): string {
         </div>
       </div>
       <div class="segmented toolbar-row">
-        <button v-for="item in tabs" :key="item.id" :class="{ active: tab === item.id }" :aria-label="`打开${item.label}管理页`" @click="refreshTab(item.id)">
+        <button
+          v-for="item in tabs"
+          :key="item.id"
+          :class="{ active: tab === item.id }"
+          :aria-label="`打开${item.label}管理页`"
+          @click="refreshTab(item.id)"
+        >
           {{ item.label }}
         </button>
       </div>

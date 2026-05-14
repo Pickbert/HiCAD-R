@@ -47,7 +47,12 @@ describe('P1 frontend components', () => {
     await wrapper.get('button[aria-label="提交 AI 建模请求"]').trigger('click');
     await nextTick();
 
-    expect(streamGenerate).toHaveBeenCalledWith('生成一个盒子', store.provider, { accessToken: '' }, expect.any(Function));
+    expect(streamGenerate).toHaveBeenCalledWith(
+      '生成一个盒子',
+      store.provider,
+      { accessToken: '' },
+      expect.any(Function)
+    );
     expect(store.pendingAiCode).toContain('cuboid');
     expect(wrapper.text()).toContain('待应用变更');
     expect(store.messages.some((message) => message.text.includes('building box'))).toBe(true);

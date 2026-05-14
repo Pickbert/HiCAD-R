@@ -1,4 +1,4 @@
-import type { AiProvider, CadModel, Template, User } from '@hicad/shared';
+import type { CadModel, Template, User } from '@hicad/shared';
 
 const apiBase = '/api';
 
@@ -29,6 +29,24 @@ export interface ImportStlPayload {
   tags: string[];
 }
 
+export interface SaveModelPayload {
+  title: string;
+  description: string;
+  code: string;
+  material?: string;
+  category?: string;
+  tags?: string[];
+}
+
+export interface CreateActivationCodesPayload {
+  prefix?: string;
+  count?: number;
+  tier?: 'free' | 'pro' | 'team';
+  maxUses?: number;
+  expiresAt?: string;
+  disabled?: boolean;
+}
+
 export class ApiError extends Error {
   constructor(
     message: string,
@@ -40,13 +58,23 @@ export class ApiError extends Error {
   }
 }
 
-export async function apiFetch<T>(path: string, options: RequestInit = {}, auth: AuthState = {}, didRefresh = false): Promise<T> {
+export async function apiFetch<T>(
+  path: string,
+  options: RequestInit = {},
+  auth: AuthState = {},
+  didRefresh = false
+): Promise<T> {
   const response = await fetch(`${apiBase}${path}`, buildRequest(options, auth.accessToken));
   if (response.status === 401 && auth.refreshToken && !didRefresh && path !== '/auth/refresh') {
     try {
       const refreshed = await refresh(auth.refreshToken);
       auth.onRefresh?.(refreshed);
-      return apiFetch<T>(path, options, { ...auth, accessToken: refreshed.accessToken, refreshToken: refreshed.refreshToken }, true);
+      return apiFetch<T>(
+        path,
+        options,
+        { ...auth, accessToken: refreshed.accessToken, refreshToken: refreshed.refreshToken },
+        true
+      );
     } catch {
       auth.onAuthExpired?.();
     }
@@ -62,7 +90,12 @@ export interface ClosableStream {
   close(): void;
 }
 
-export function streamGenerate(prompt: string, provider: string, auth: AuthState, onEvent: (event: any) => void): ClosableStream {
+export function streamGenerate(
+  prompt: string,
+  provider: string,
+  auth: AuthState,
+  onEvent: (event: any) => void
+): ClosableStream {
   const controller = new AbortController();
   const url = `${apiBase}/ai/generate?prompt=${encodeURIComponent(prompt)}&provider=${encodeURIComponent(provider)}`;
   void fetch(url, {
@@ -81,9 +114,7 @@ export function streamGenerate(prompt: string, provider: string, auth: AuthState
         const parts = buffer.split('\n\n');
         buffer = parts.pop() ?? '';
         for (const part of parts) {
-          const dataLine = part
-            .split('\n')
-            .find((line) => line.startsWith('data:'));
+          const dataLine = part.split('\n').find((line) => line.startsWith('data:'));
           if (!dataLine) continue;
           onEvent(JSON.parse(dataLine.slice(5).trim()));
         }
@@ -101,7 +132,10 @@ export function login(email: string, password: string) {
 }
 
 export function register(email: string, password: string, activationCode: string) {
-  return apiFetch<AuthResponse>('/auth/register', { method: 'POST', body: JSON.stringify({ email, password, activationCode }) });
+  return apiFetch<AuthResponse>('/auth/register', {
+    method: 'POST',
+    body: JSON.stringify({ email, password, activationCode })
+  });
 }
 
 export function refresh(refreshToken: string) {
@@ -114,6 +148,42 @@ export function me(auth: AuthState) {
 
 export function listMine(auth: AuthState) {
   return apiFetch<CadModel[]>('/models', {}, auth);
+}
+
+export function saveModel(payload: SaveModelPayload, auth: AuthState) {
+  return apiFetch<CadModel>('/models', { method: 'POST', body: JSON.stringify(payload) }, auth);
+}
+
+export function updateModel(id: string, payload: SaveModelPayload, auth: AuthState) {
+  return apiFetch<CadModel>(
+    `/models/${encodeURIComponent(id)}`,
+    { method: 'PUT', body: JSON.stringify(payload) },
+    auth
+  );
+}
+
+export function publishModel(id: string, auth: AuthState) {
+  return apiFetch<CadModel>(
+    `/models/${encodeURIComponent(id)}/publish`,
+    { method: 'POST', body: JSON.stringify({ visibility: 'public' }) },
+    auth
+  );
+}
+
+export function unpublishModel(id: string, auth: AuthState) {
+  return apiFetch<CadModel>(`/models/${encodeURIComponent(id)}/unpublish`, { method: 'POST' }, auth);
+}
+
+export function shareModel(id: string, auth: AuthState) {
+  return apiFetch<{ token: string; url: string }>(`/models/${encodeURIComponent(id)}/share`, { method: 'POST' }, auth);
+}
+
+export function recordModelExport(id: string, format: 'stl' | 'obj', auth: AuthState) {
+  return apiFetch<{ ok: true; format: 'stl' | 'obj' }>(
+    `/models/${encodeURIComponent(id)}/export`,
+    { method: 'POST', body: JSON.stringify({ format }) },
+    auth
+  );
 }
 
 export function fetchMarket(query: MarketQuery = {}) {
@@ -133,15 +203,31 @@ export function importStl(payload: ImportStlPayload, auth: AuthState) {
 }
 
 export function modifyAi(prompt: string, code: string, auth: AuthState) {
-  return apiFetch<{ code: string; summary: unknown }>('/ai/modify', { method: 'POST', body: JSON.stringify({ prompt, code }) }, auth);
+  return apiFetch<{ code: string; summary: unknown }>(
+    '/ai/modify',
+    { method: 'POST', body: JSON.stringify({ prompt, code }) },
+    auth
+  );
 }
 
 export function fetchAiHistory(auth: AuthState) {
-  return apiFetch<Array<{ id: string; prompt: string; code: string; provider: string; createdAt: string }>>('/ai/history', {}, auth);
+  return apiFetch<Array<{ id: string; prompt: string; code: string; provider: string; createdAt: string }>>(
+    '/ai/history',
+    {},
+    auth
+  );
 }
 
 export function fetchAdminResource<T>(resource: string, auth: AuthState) {
   return apiFetch<T>(`/admin/${resource.replace(/^\/+/, '')}`, {}, auth);
+}
+
+export function createAdminActivationCodes(payload: CreateActivationCodesPayload, auth: AuthState) {
+  return apiFetch<{ codes?: string[]; code?: string }>(
+    '/admin/activation-codes/batch',
+    { method: 'POST', body: JSON.stringify(payload) },
+    auth
+  );
 }
 
 export function buildMarketPath(query: MarketQuery): string {
@@ -165,7 +251,8 @@ export async function fileToBase64Payload(file: File, title: string): Promise<Im
 
 function buildRequest(options: RequestInit, accessToken?: string): RequestInit {
   const headers = new Headers(options.headers);
-  if (!headers.has('content-type') && !(options.body instanceof FormData)) headers.set('content-type', 'application/json');
+  if (!headers.has('content-type') && !(options.body instanceof FormData))
+    headers.set('content-type', 'application/json');
   if (accessToken) headers.set('authorization', `Bearer ${accessToken}`);
   return { ...options, headers };
 }

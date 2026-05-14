@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 cd "$ROOT_DIR"
 
 MODE="${MODE:-prod}"
@@ -26,8 +26,10 @@ Usage:
   PORT=3100 ./start.sh       Start backend on a custom port
   MODE=dev FRONTEND_PORT=5174 ./start.sh
                              Start frontend dev server on a custom port
+  HICAD_AUTO_KILL_OWN_PORTS=0 ./start.sh
+                             Disable automatic cleanup of previous HiCAD listeners
   HICAD_KILL_PORT=1 ./start.sh
-                             If the selected PORT is occupied, kill only those listed PIDs
+                             Force-kill any process listening on the selected port
   HICAD_SKIP_PORT_CHECK=1 ./start.sh
                              Skip startup port preflight
 
@@ -59,6 +61,77 @@ port_pids() {
   lsof -tiTCP:"$port" -sTCP:LISTEN 2>/dev/null || true
 }
 
+process_cwd() {
+  local pid="$1"
+  lsof -a -p "$pid" -d cwd -Fn 2>/dev/null | sed -n 's/^n//p' | head -n 1
+}
+
+process_command() {
+  local pid="$1"
+  ps -p "$pid" -o command= 2>/dev/null || true
+}
+
+is_own_hicad_listener() {
+  local pid="$1"
+  local cwd
+  local command
+  cwd="$(process_cwd "$pid")"
+  command="$(process_command "$pid")"
+
+  if [[ "$cwd" == "$ROOT_DIR/backend" ]]; then
+    [[ "$command" == *node* || "$command" == *tsx* || "$command" == *nest* ]]
+    return
+  fi
+
+  if [[ "$cwd" == "$ROOT_DIR/frontend" ]]; then
+    [[ "$command" == *node* || "$command" == *vite* ]]
+    return
+  fi
+
+  return 1
+}
+
+all_listeners_are_own_hicad() {
+  local pids="$1"
+  local pid
+  local found=0
+  while IFS= read -r pid; do
+    [[ -z "$pid" ]] && continue
+    found=1
+    if ! is_own_hicad_listener "$pid"; then
+      return 1
+    fi
+  done <<<"$pids"
+  [[ "$found" == "1" ]]
+}
+
+wait_for_port_release() {
+  local port="$1"
+  local attempt
+  for attempt in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20; do
+    if [[ -z "$(port_pids "$port")" ]]; then
+      return 0
+    fi
+    sleep 0.2
+  done
+  echo "Port $port is still in use after stopping the previous listener." >&2
+  echo "Inspect it with: lsof -nP -iTCP:$port -sTCP:LISTEN" >&2
+  exit 1
+}
+
+stop_port_listeners() {
+  local port="$1"
+  local pids="$2"
+  local reason="$3"
+  local pid
+  while IFS= read -r pid; do
+    [[ -z "$pid" ]] && continue
+    echo "Stopping PID $pid on port $port ($reason)"
+    kill "$pid" 2>/dev/null || true
+  done <<<"$pids"
+  wait_for_port_release "$port"
+}
+
 check_port() {
   local port="$1"
   local label="$2"
@@ -70,18 +143,21 @@ check_port() {
 
   echo "Port $port ($label) is already in use by PID(s): $pids" >&2
   lsof -nP -iTCP:"$port" -sTCP:LISTEN >&2 || true
-  if [[ "${HICAD_KILL_PORT:-0}" != "1" ]]; then
-    echo "Refusing to interfere with other projects." >&2
-    suggest_port_command "$port" "$label"
-    echo "Or rerun with HICAD_KILL_PORT=1 to stop only the listed PID(s)." >&2
-    exit 1
+
+  if [[ "${HICAD_KILL_PORT:-0}" == "1" ]]; then
+    stop_port_listeners "$port" "$pids" "HICAD_KILL_PORT=1"
+    return 0
   fi
 
-  while IFS= read -r pid; do
-    [[ -z "$pid" ]] && continue
-    echo "Stopping PID $pid on port $port"
-    kill "$pid"
-  done <<<"$pids"
+  if [[ "${HICAD_AUTO_KILL_OWN_PORTS:-1}" == "1" ]] && all_listeners_are_own_hicad "$pids"; then
+    stop_port_listeners "$port" "$pids" "previous HiCAD process from this repository"
+    return 0
+  fi
+
+  echo "Refusing to interfere with a process that does not look like this HiCAD checkout." >&2
+  suggest_port_command "$port" "$label"
+  echo "If you are sure, rerun with HICAD_KILL_PORT=1 to stop the listed PID(s)." >&2
+  exit 1
 }
 
 suggest_port_command() {

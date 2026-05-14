@@ -37,8 +37,17 @@ const emit = defineEmits<{ confirm: []; cancel: [] }>();
         <slot />
       </div>
       <div class="card-actions confirm-actions">
-        <button type="button" :disabled="busy" :aria-label="cancelLabel" @click="emit('cancel')">{{ cancelLabel }}</button>
-        <button data-testid="confirm-accept" class="primary-action" type="button" :disabled="busy" :aria-label="confirmLabel" @click="emit('confirm')">
+        <button type="button" :disabled="busy" :aria-label="cancelLabel" @click="emit('cancel')">
+          {{ cancelLabel }}
+        </button>
+        <button
+          data-testid="confirm-accept"
+          class="primary-action"
+          type="button"
+          :disabled="busy"
+          :aria-label="confirmLabel"
+          @click="emit('confirm')"
+        >
           {{ busy ? '处理中' : confirmLabel }}
         </button>
       </div>

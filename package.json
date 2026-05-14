@@ -10,19 +10,29 @@
     "build": "pnpm --filter @hicad/shared build && pnpm --filter @hicad/backend build && pnpm --filter @hicad/frontend build",
     "start": "pnpm --filter @hicad/backend start",
     "test": "pnpm --filter @hicad/shared test && pnpm --filter @hicad/backend test && pnpm --filter @hicad/frontend test",
-    "lint": "pnpm --filter @hicad/shared lint && pnpm --filter @hicad/backend lint && pnpm --filter @hicad/frontend lint",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "typecheck": "pnpm --filter @hicad/shared typecheck && pnpm --filter @hicad/backend typecheck && pnpm --filter @hicad/frontend typecheck",
     "audit:prod": "pnpm audit --registry=https://registry.npmjs.org --prod --audit-level high",
     "test:e2e": "playwright test",
     "bundle:check": "node scripts/check-frontend-bundle.mjs",
-    "ci:quality": "pnpm audit:prod && pnpm test && pnpm typecheck && pnpm build && pnpm bundle:check && pnpm test:e2e"
+    "ci:quality": "pnpm format:check && pnpm lint && pnpm audit:prod && pnpm test && pnpm typecheck && pnpm build && pnpm bundle:check && pnpm test:e2e"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.60.0",
     "@types/node": "^20.12.12",
     "concurrently": "^8.2.2",
+    "eslint": "^10.3.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-vue": "^10.9.1",
+    "globals": "^17.6.0",
+    "prettier": "^3.8.3",
     "typescript": "^5.4.5",
-    "vitest": "^1.6.0"
+    "typescript-eslint": "^8.59.3",
+    "vitest": "^1.6.0",
+    "vue-eslint-parser": "^10.4.0"
   },
   "engines": {
     "node": ">=18.0.0",

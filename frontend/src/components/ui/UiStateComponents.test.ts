@@ -9,7 +9,7 @@ describe('common UI state components', () => {
     const error = await readComponent('ErrorState.vue');
 
     expect(loading).toContain('aria-busy="true"');
-    expect(empty).toContain("role=\"status\"");
+    expect(empty).toContain('role="status"');
     expect(error).toContain('role="alert"');
   });
 

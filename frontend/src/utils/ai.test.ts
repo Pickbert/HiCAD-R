@@ -11,7 +11,8 @@ describe('AI UI helpers', () => {
 
   it('summarizes code changes for diff/apply review', () => {
     const before = 'const width = 10\nfunction main() { return cuboid({ size: [width, 10, 10] }) }\n';
-    const after = '// AI 修改请求: 加宽\nconst width = 20\nfunction main() { return cuboid({ size: [width, 10, 10] }) }\n';
+    const after =
+      '// AI 修改请求: 加宽\nconst width = 20\nfunction main() { return cuboid({ size: [width, 10, 10] }) }\n';
 
     expect(buildCodeDiffSummary(before, after)).toEqual({
       added: 2,

@@ -23,7 +23,12 @@ export class AuthService {
       throw new BadRequestException('email already registered');
     }
     const activation = this.db.data.activationCodes.find((code) => code.code === dto.activationCode.trim());
-    if (!activation || activation.disabled || activation.useCount >= activation.maxUses || isExpired(activation.expiresAt)) {
+    if (
+      !activation ||
+      activation.disabled ||
+      activation.useCount >= activation.maxUses ||
+      isExpired(activation.expiresAt)
+    ) {
       throw new BadRequestException('invalid activation code');
     }
     const now = nowIso();
@@ -70,17 +75,31 @@ export class AuthService {
     const safeUser = toPublicUser(user);
     return {
       user: safeUser,
-      accessToken: await this.jwt.signAsync({ sub: user.id, email: user.email, role: user.role }, { secret: this.accessSecret, expiresIn: '15m' }),
-      refreshToken: await this.jwt.signAsync({ sub: user.id, version: user.refreshTokenVersion }, { secret: this.refreshSecret, expiresIn: '30d' })
+      accessToken: await this.jwt.signAsync(
+        { sub: user.id, email: user.email, role: user.role },
+        { secret: this.accessSecret, expiresIn: '15m' }
+      ),
+      refreshToken: await this.jwt.signAsync(
+        { sub: user.id, version: user.refreshTokenVersion },
+        { secret: this.refreshSecret, expiresIn: '30d' }
+      )
     };
   }
 
   private get accessSecret(): string {
-    return getRequiredSecret('JWT_ACCESS_SECRET', this.config.get('JWT_ACCESS_SECRET'), 'development-access-secret-with-32-chars');
+    return getRequiredSecret(
+      'JWT_ACCESS_SECRET',
+      this.config.get('JWT_ACCESS_SECRET'),
+      'development-access-secret-with-32-chars'
+    );
   }
 
   private get refreshSecret(): string {
-    return getRequiredSecret('JWT_REFRESH_SECRET', this.config.get('JWT_REFRESH_SECRET'), 'development-refresh-secret-with-32-chars');
+    return getRequiredSecret(
+      'JWT_REFRESH_SECRET',
+      this.config.get('JWT_REFRESH_SECRET'),
+      'development-refresh-secret-with-32-chars'
+    );
   }
 }
 

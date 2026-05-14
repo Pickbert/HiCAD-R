@@ -162,23 +162,23 @@
 
 ## P2 工程化
 
-- [ ] 增加 GitHub Actions：install、test、typecheck、build、audit。
-- [ ] 增加 Dockerfile。
-- [ ] 增加 docker-compose：应用 + 可选 PostgreSQL。
-- [ ] 增加 PM2 配置。
-- [ ] 增加 Nginx 示例配置。
-- [ ] 增加 `.env.production.example`。
-- [ ] 增加 release checklist。
-- [ ] 增加 changelog。
-- [ ] 增加贡献指南。
-- [ ] 增加代码格式化配置：Prettier/ESLint。
-- [ ] 拆分 Monaco 语言包，减少首屏体积。
-- [ ] 前端路由懒加载。
-- [ ] Three.js 和 Monaco 分包加载。
-- [ ] 服务端静态资源缓存头。
-- [ ] 日志脱敏，避免输出 API Key、JWT、支付签名。
-- [ ] 增加 OpenAPI/Swagger 文档。
-- [ ] 增加 API client 自动生成或类型安全封装。
+- [x] 增加 GitHub Actions：install、test、typecheck、build、audit。
+- [x] 增加 Dockerfile。
+- [x] 增加 docker-compose：应用 + 可选 PostgreSQL。
+- [x] 增加 PM2 配置。
+- [x] 增加 Nginx 示例配置。
+- [x] 增加 `.env.production.example`。
+- [x] 增加 release checklist。
+- [x] 增加 changelog。
+- [x] 增加贡献指南。
+- [x] 增加代码格式化配置：Prettier/ESLint。
+- [x] 拆分 Monaco 语言包，减少首屏体积。
+- [x] 前端路由懒加载。
+- [x] Three.js 和 Monaco 分包加载。
+- [x] 服务端静态资源缓存头。
+- [x] 日志脱敏，避免输出 API Key、JWT、支付签名。
+- [x] 增加 OpenAPI/Swagger 文档。
+- [x] 增加 API client 自动生成或类型安全封装。
 
 ## P2 产品增强
 

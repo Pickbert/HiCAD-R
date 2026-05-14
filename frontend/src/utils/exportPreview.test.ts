@@ -7,24 +7,9 @@ describe('buildExportPreview', () => {
     const mesh: WorkerMesh = {
       material: 'cad-blue',
       color: [0.2, 0.5, 1],
-      positions: new Float32Array([
-        0, 0, 0,
-        10, 0, 0,
-        0, 20, 0,
-        0, 0, 30
-      ]),
-      normals: new Float32Array([
-        0, 0, -1,
-        0, 0, -1,
-        0, 0, -1,
-        1, 1, 1
-      ]),
-      indices: new Uint32Array([
-        0, 2, 1,
-        0, 1, 3,
-        1, 2, 3,
-        2, 0, 3
-      ])
+      positions: new Float32Array([0, 0, 0, 10, 0, 0, 0, 20, 0, 0, 0, 30]),
+      normals: new Float32Array([0, 0, -1, 0, 0, -1, 0, 0, -1, 1, 1, 1]),
+      indices: new Uint32Array([0, 2, 1, 0, 1, 3, 1, 2, 3, 2, 0, 3])
     };
 
     const preview = buildExportPreview([mesh], 'stl');

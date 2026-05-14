@@ -1,4 +1,5 @@
 import { Body, Controller, Delete, Get, Inject, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../common/current-user.decorator.js';
 import { AdminGuard } from '../common/admin.guard.js';
 import { JwtGuard } from '../common/jwt.guard.js';
@@ -6,11 +7,14 @@ import { JsonDatabaseService } from '../database/json-database.service.js';
 import { toPublicUser } from '../auth/auth.service.js';
 import { nowIso, StoredUser } from '../domain.js';
 
+@ApiTags('admin')
+@ApiBearerAuth()
 @UseGuards(JwtGuard, AdminGuard)
 @Controller('admin')
 export class AdminController {
   constructor(@Inject(JsonDatabaseService) private readonly db: JsonDatabaseService) {}
 
+  @ApiOperation({ summary: 'Read admin dashboard counts' })
   @Get('stats')
   stats() {
     return {
@@ -22,48 +26,61 @@ export class AdminController {
     };
   }
 
+  @ApiOperation({ summary: 'List users' })
   @Get('users')
   users() {
     return this.db.data.users.map(toPublicUser);
   }
 
+  @ApiOperation({ summary: 'List orders' })
   @Get('orders')
   orders() {
     return this.db.data.orders;
   }
 
+  @ApiOperation({ summary: 'List models' })
   @Get('models')
   models() {
     return this.db.data.models;
   }
 
+  @ApiOperation({ summary: 'List templates' })
   @Get('templates')
   templates() {
     return this.db.data.templates;
   }
 
+  @ApiOperation({ summary: 'List feedback items' })
   @Get('feedbacks')
   feedbacks() {
     return this.db.data.feedbacks;
   }
 
+  @ApiOperation({ summary: 'List activation codes' })
   @Get('activation-codes')
   activationCodes() {
-    return this.db.data.activationCodes.map(({ code, tier, createdAt, expiresAt, usedBy, usedAt, maxUses, useCount, disabled }) => ({
-      code,
-      tier,
-      createdAt,
-      expiresAt,
-      usedBy,
-      usedAt,
-      maxUses,
-      useCount,
-      disabled: Boolean(disabled)
-    }));
+    return this.db.data.activationCodes.map(
+      ({ code, tier, createdAt, expiresAt, usedBy, usedAt, maxUses, useCount, disabled }) => ({
+        code,
+        tier,
+        createdAt,
+        expiresAt,
+        usedBy,
+        usedAt,
+        maxUses,
+        useCount,
+        disabled: Boolean(disabled)
+      })
+    );
   }
 
+  @ApiOperation({ summary: 'Create an activation code' })
   @Post('activation-codes')
-  createActivationCode(@Body() body: { code?: string; tier?: 'free' | 'pro' | 'team'; maxUses?: number; expiresAt?: string; disabled?: boolean }, @CurrentUser() user: StoredUser) {
+  createActivationCode(
+    @Body()
+    body: { code?: string; tier?: 'free' | 'pro' | 'team'; maxUses?: number; expiresAt?: string; disabled?: boolean },
+    @CurrentUser() user: StoredUser
+  ) {
     const code = body.code?.trim() || crypto.randomUUID().slice(0, 12);
     return this.db.mutate((state) => {
       state.activationCodes.push({
@@ -80,11 +97,26 @@ export class AdminController {
     });
   }
 
+  @ApiOperation({ summary: 'Create activation codes in batch' })
   @Post('activation-codes/batch')
-  createActivationCodes(@Body() body: { prefix?: string; count?: number; tier?: 'free' | 'pro' | 'team'; maxUses?: number; expiresAt?: string; disabled?: boolean }, @CurrentUser() user: StoredUser) {
+  createActivationCodes(
+    @Body()
+    body: {
+      prefix?: string;
+      count?: number;
+      tier?: 'free' | 'pro' | 'team';
+      maxUses?: number;
+      expiresAt?: string;
+      disabled?: boolean;
+    },
+    @CurrentUser() user: StoredUser
+  ) {
     const count = Math.min(Math.max(1, body.count ?? 1), 100);
     return this.db.mutate((state) => {
-      const codes = Array.from({ length: count }, (_, index) => `${body.prefix ?? 'HICAD'}-${crypto.randomUUID().slice(0, 8)}-${index + 1}`);
+      const codes = Array.from(
+        { length: count },
+        (_, index) => `${body.prefix ?? 'HICAD'}-${crypto.randomUUID().slice(0, 8)}-${index + 1}`
+      );
       for (const code of codes) {
         state.activationCodes.push({
           code,
@@ -97,11 +129,19 @@ export class AdminController {
           createdAt: nowIso()
         });
       }
-      state.auditLogs.push({ id: crypto.randomUUID(), actorId: user.id, action: 'activation_codes.batch_create', targetType: 'activation_code', createdAt: nowIso(), details: { count } });
+      state.auditLogs.push({
+        id: crypto.randomUUID(),
+        actorId: user.id,
+        action: 'activation_codes.batch_create',
+        targetType: 'activation_code',
+        createdAt: nowIso(),
+        details: { count }
+      });
       return { codes };
     });
   }
 
+  @ApiOperation({ summary: 'Delete a user' })
   @Delete('users/:id')
   deleteUser(@Param('id') id: string, @CurrentUser() user: StoredUser) {
     return this.db.mutate((state) => {
@@ -110,26 +150,43 @@ export class AdminController {
     });
   }
 
+  @ApiOperation({ summary: 'Ban a user' })
   @Post('users/:id/ban')
   banUser(@Param('id') id: string, @CurrentUser() user: StoredUser) {
     return this.db.mutate((state) => {
       const target = state.users.find((entry) => entry.id === id);
       if (target && target.id !== user.id) target.bannedAt = nowIso();
-      state.auditLogs.push({ id: crypto.randomUUID(), actorId: user.id, action: 'user.ban', targetType: 'user', targetId: id, createdAt: nowIso() });
+      state.auditLogs.push({
+        id: crypto.randomUUID(),
+        actorId: user.id,
+        action: 'user.ban',
+        targetType: 'user',
+        targetId: id,
+        createdAt: nowIso()
+      });
       return target ? toPublicUser(target) : { id, bannedAt: undefined };
     });
   }
 
+  @ApiOperation({ summary: 'Unban a user' })
   @Post('users/:id/unban')
   unbanUser(@Param('id') id: string, @CurrentUser() user: StoredUser) {
     return this.db.mutate((state) => {
       const target = state.users.find((entry) => entry.id === id);
       if (target) delete target.bannedAt;
-      state.auditLogs.push({ id: crypto.randomUUID(), actorId: user.id, action: 'user.unban', targetType: 'user', targetId: id, createdAt: nowIso() });
+      state.auditLogs.push({
+        id: crypto.randomUUID(),
+        actorId: user.id,
+        action: 'user.unban',
+        targetType: 'user',
+        targetId: id,
+        createdAt: nowIso()
+      });
       return target ? toPublicUser(target) : { id };
     });
   }
 
+  @ApiOperation({ summary: 'Delete a model as admin' })
   @Delete('models/:id')
   deleteModel(@Param('id') id: string) {
     return this.db.mutate((state) => {
@@ -138,6 +195,7 @@ export class AdminController {
     });
   }
 
+  @ApiOperation({ summary: 'Delete a template' })
   @Delete('templates/:id')
   deleteTemplate(@Param('id') id: string) {
     return this.db.mutate((state) => {
@@ -146,6 +204,7 @@ export class AdminController {
     });
   }
 
+  @ApiOperation({ summary: 'Feature a template' })
   @Post('templates/:id/feature')
   featureTemplate(@Param('id') id: string, @CurrentUser() user: StoredUser, @Body() body: { sortOrder?: number }) {
     return this.db.mutate((state) => {
@@ -154,34 +213,63 @@ export class AdminController {
         template.featured = true;
         template.sortOrder = body.sortOrder ?? template.sortOrder;
       }
-      state.auditLogs.push({ id: crypto.randomUUID(), actorId: user.id, action: 'template.feature', targetType: 'template', targetId: id, createdAt: nowIso() });
+      state.auditLogs.push({
+        id: crypto.randomUUID(),
+        actorId: user.id,
+        action: 'template.feature',
+        targetType: 'template',
+        targetId: id,
+        createdAt: nowIso()
+      });
       return template;
     });
   }
 
+  @ApiOperation({ summary: 'Unfeature a template' })
   @Post('templates/:id/unfeature')
   unfeatureTemplate(@Param('id') id: string, @CurrentUser() user: StoredUser) {
     return this.db.mutate((state) => {
       const template = state.templates.find((entry) => entry.id === id);
       if (template) template.featured = false;
-      state.auditLogs.push({ id: crypto.randomUUID(), actorId: user.id, action: 'template.unfeature', targetType: 'template', targetId: id, createdAt: nowIso() });
+      state.auditLogs.push({
+        id: crypto.randomUUID(),
+        actorId: user.id,
+        action: 'template.unfeature',
+        targetType: 'template',
+        targetId: id,
+        createdAt: nowIso()
+      });
       return template;
     });
   }
 
+  @ApiOperation({ summary: 'Update feedback status' })
   @Patch('feedbacks/:id')
-  updateFeedback(@Param('id') id: string, @CurrentUser() user: StoredUser, @Body() body: { status?: 'open' | 'reviewing' | 'closed' }) {
+  updateFeedback(
+    @Param('id') id: string,
+    @CurrentUser() user: StoredUser,
+    @Body() body: { status?: 'open' | 'reviewing' | 'closed' }
+  ) {
     return this.db.mutate((state) => {
       const feedback = state.feedbacks.find((entry) => entry.id === id);
       if (feedback && body.status) {
         feedback.status = body.status;
         feedback.updatedAt = nowIso();
       }
-      state.auditLogs.push({ id: crypto.randomUUID(), actorId: user.id, action: 'feedback.update', targetType: 'feedback', targetId: id, createdAt: nowIso(), details: { status: body.status } });
+      state.auditLogs.push({
+        id: crypto.randomUUID(),
+        actorId: user.id,
+        action: 'feedback.update',
+        targetType: 'feedback',
+        targetId: id,
+        createdAt: nowIso(),
+        details: { status: body.status }
+      });
       return feedback;
     });
   }
 
+  @ApiOperation({ summary: 'Read admin diagnostics' })
   @Get('diagnostics')
   diagnostics() {
     return {

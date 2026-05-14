@@ -169,7 +169,11 @@ export const useWorkspaceStore = defineStore('workspace', {
     setMeshes(meshes: WorkerMesh[]) {
       this.meshes = meshes;
     },
-    setRenderResult(payload: { meshes: WorkerMesh[]; parts: CadPartNode[]; stats: MeshStats & { elapsedMs?: number } }) {
+    setRenderResult(payload: {
+      meshes: WorkerMesh[];
+      parts: CadPartNode[];
+      stats: MeshStats & { elapsedMs?: number };
+    }) {
       this.meshes = payload.meshes;
       this.cadParts = payload.parts;
       this.renderStats = payload.stats;

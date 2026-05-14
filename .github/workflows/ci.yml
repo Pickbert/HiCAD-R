@@ -22,5 +22,21 @@ jobs:
         run: pnpm exec playwright install --with-deps chromium
       - name: Install startup tooling
         run: sudo apt-get update && sudo apt-get install -y lsof
-      - name: Quality gate
+      - name: Format check
+        run: pnpm format:check
+      - name: Lint
+        run: pnpm lint
+      - name: Audit production dependencies
+        run: pnpm audit:prod
+      - name: Test
+        run: pnpm test
+      - name: Typecheck
+        run: pnpm typecheck
+      - name: Build
+        run: pnpm build
+      - name: Bundle budget
+        run: pnpm bundle:check
+      - name: Playwright E2E
+        run: pnpm test:e2e
+      - name: Combined quality command
         run: pnpm ci:quality

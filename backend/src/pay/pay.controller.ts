@@ -1,4 +1,16 @@
-import { Body, Controller, Get, Headers, Inject, NotFoundException, Param, Post, UnauthorizedException, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Headers,
+  Inject,
+  NotFoundException,
+  Param,
+  Post,
+  UnauthorizedException,
+  UseGuards
+} from '@nestjs/common';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../common/current-user.decorator.js';
 import { JwtGuard } from '../common/jwt.guard.js';
 import { JsonDatabaseService } from '../database/json-database.service.js';
@@ -7,10 +19,13 @@ import { getRequiredSecret } from '../security/runtime-security.js';
 import { CreateOrderDto, PayCallbackDto } from './pay.dto.js';
 import { MockPaymentProvider } from './payment-provider.js';
 
+@ApiTags('pay')
 @Controller('pay')
 export class PayController {
   constructor(@Inject(JsonDatabaseService) private readonly db: JsonDatabaseService) {}
 
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Create a mock payment order' })
   @UseGuards(JwtGuard)
   @Post('create')
   create(@CurrentUser() user: StoredUser, @Body() dto: CreateOrderDto) {
@@ -27,11 +42,18 @@ export class PayController {
         updatedAt: now
       };
       state.orders.push(order);
-      const provider = new MockPaymentProvider(getRequiredSecret('PAY_CALLBACK_SECRET', process.env.PAY_CALLBACK_SECRET, 'development-payment-secret-with-32-chars'));
+      const provider = new MockPaymentProvider(
+        getRequiredSecret(
+          'PAY_CALLBACK_SECRET',
+          process.env.PAY_CALLBACK_SECRET,
+          'development-payment-secret-with-32-chars'
+        )
+      );
       return provider.createPayment(order).then((payment) => ({ ...order, ...payment }));
     });
   }
 
+  @ApiOperation({ summary: 'Read payment order status' })
   @Get('status/:orderNo')
   status(@Param('orderNo') orderNo: string) {
     const order = this.db.data.orders.find((entry) => entry.orderNo === orderNo);
@@ -39,6 +61,7 @@ export class PayController {
     return order;
   }
 
+  @ApiOperation({ summary: 'Read mock payment QR text' })
   @Get('code/:orderNo')
   code(@Param('orderNo') orderNo: string) {
     const order = this.db.data.orders.find((entry) => entry.orderNo === orderNo);
@@ -46,9 +69,14 @@ export class PayController {
     return { orderNo, provider: 'mock', qrText: `hicad://pay/${orderNo}` };
   }
 
+  @ApiOperation({ summary: 'Receive a signed mock payment callback' })
   @Post('callback')
   callback(@Body() body: PayCallbackDto, @Headers('x-hicad-signature') headerSignature?: string) {
-    const secret = getRequiredSecret('PAY_CALLBACK_SECRET', process.env.PAY_CALLBACK_SECRET, 'development-payment-secret-with-32-chars');
+    const secret = getRequiredSecret(
+      'PAY_CALLBACK_SECRET',
+      process.env.PAY_CALLBACK_SECRET,
+      'development-payment-secret-with-32-chars'
+    );
     const provider = new MockPaymentProvider(secret);
     const signature = headerSignature ?? body.signature;
     if (!provider.verifyCallback({ ...body }, signature)) {

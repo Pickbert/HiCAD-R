@@ -30,30 +30,29 @@ export class AiService {
       adapter: this.createAdapter(selectedProvider),
       timeoutMs: Number(this.config.get('AI_TIMEOUT_MS') ?? 60_000)
     });
-    return this.streamAsyncEvents(
-      this.withAiQuota(userId, events),
-      async (events) => {
-        const code = [...events].reverse().find((event) => event.type === 'code')?.code;
-        if (code) {
-          await this.db.mutate((state) => {
-            state.aiHistory.push({
-              id: crypto.randomUUID(),
-              userId,
-              provider: `${selectedProvider}:${events.find((event) => event.type === 'code')?.source ?? 'provider'}`,
-              prompt,
-              code,
-              createdAt: nowIso()
-            });
+    return this.streamAsyncEvents(this.withAiQuota(userId, events), async (events) => {
+      const code = [...events].reverse().find((event) => event.type === 'code')?.code;
+      if (code) {
+        await this.db.mutate((state) => {
+          state.aiHistory.push({
+            id: crypto.randomUUID(),
+            userId,
+            provider: `${selectedProvider}:${events.find((event) => event.type === 'code')?.source ?? 'provider'}`,
+            prompt,
+            code,
+            createdAt: nowIso()
           });
-        }
+        });
       }
-    );
+    });
   }
 
   streamModify(prompt: string, currentCode: string, userId?: string): Observable<MessageEvent> {
     const parameters = summarizeCode(currentCode).parameters;
     const note = `// AI 修改请求: ${prompt.replace(/\r?\n/g, ' ')}\n`;
-    const code = validateCadCodeSafety(currentCode.startsWith('// AI 修改请求') ? currentCode : `${note}${currentCode}`);
+    const code = validateCadCodeSafety(
+      currentCode.startsWith('// AI 修改请求') ? currentCode : `${note}${currentCode}`
+    );
     return this.streamEvents(
       [
         { type: 'start', provider: this.getProvider(), message: '开始修改当前 CAD 代码' },
@@ -77,7 +76,11 @@ export class AiService {
   }
 
   async modify(prompt: string, currentCode: string, userId?: string) {
-    const code = validateCadCodeSafety(currentCode.startsWith('// AI 修改请求') ? currentCode : `// AI 修改请求: ${prompt.replace(/\r?\n/g, ' ')}\n${currentCode}`);
+    const code = validateCadCodeSafety(
+      currentCode.startsWith('// AI 修改请求')
+        ? currentCode
+        : `// AI 修改请求: ${prompt.replace(/\r?\n/g, ' ')}\n${currentCode}`
+    );
     await this.db.mutate((state) => {
       state.aiHistory.push({
         id: crypto.randomUUID(),
@@ -92,7 +95,10 @@ export class AiService {
   }
 
   history(userId?: string) {
-    return this.db.data.aiHistory.filter((entry) => !userId || entry.userId === userId).slice(-50).reverse();
+    return this.db.data.aiHistory
+      .filter((entry) => !userId || entry.userId === userId)
+      .slice(-50)
+      .reverse();
   }
 
   private getProvider(): AiProvider {
@@ -159,7 +165,10 @@ export class AiService {
     });
   }
 
-  private streamAsyncEvents(generator: AsyncGenerator<AiStreamEvent>, afterDone?: (events: AiStreamEvent[]) => Promise<void>): Observable<MessageEvent> {
+  private streamAsyncEvents(
+    generator: AsyncGenerator<AiStreamEvent>,
+    afterDone?: (events: AiStreamEvent[]) => Promise<void>
+  ): Observable<MessageEvent> {
     return new Observable((subscriber) => {
       const events: AiStreamEvent[] = [];
       let cancelled = false;
@@ -182,14 +191,21 @@ export class AiService {
     });
   }
 
-  private async *withAiQuota(userId: string | undefined, events: AsyncGenerator<AiStreamEvent>): AsyncGenerator<AiStreamEvent> {
+  private async *withAiQuota(
+    userId: string | undefined,
+    events: AsyncGenerator<AiStreamEvent>
+  ): AsyncGenerator<AiStreamEvent> {
     if (userId) {
       const user = this.db.data.users.find((entry) => entry.id === userId);
       if (user) {
         try {
           await this.db.mutate((state) => consumeDailyQuota(state, user, 'aiCalls'));
         } catch (error) {
-          yield { type: 'error', message: error instanceof Error ? error.message : 'AI quota exceeded', source: 'fallback' };
+          yield {
+            type: 'error',
+            message: error instanceof Error ? error.message : 'AI quota exceeded',
+            source: 'fallback'
+          };
           yield { type: 'done', message: 'AI quota rejected' };
           return;
         }

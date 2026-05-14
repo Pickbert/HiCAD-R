@@ -11,7 +11,18 @@ export interface PreviewSummary {
   };
 }
 
-const materials: MaterialPreset[] = ['cad-blue', 'silver', 'gold', 'copper', 'ceramic', 'glass', 'neon', 'matte-black', 'white', 'steel'];
+const materials: MaterialPreset[] = [
+  'cad-blue',
+  'silver',
+  'gold',
+  'copper',
+  'ceramic',
+  'glass',
+  'neon',
+  'matte-black',
+  'white',
+  'steel'
+];
 
 export function buildPreviewSummary(code: string): PreviewSummary {
   const parameters = parseCadParameters(code);
@@ -19,7 +30,9 @@ export function buildPreviewSummary(code: string): PreviewSummary {
   const depth = findDimension(parameters, ['depth', 'roomDepth', 'bodyWidth', 'boxDepth'], 50);
   const height = findDimension(parameters, ['height', 'roomHeight', 'bodyHeight', 'boxHeight', 'wallHeight'], 30);
   const materialMatch = /@material:\s*([A-Za-z0-9_-]+)/.exec(code);
-  const material = materials.includes(materialMatch?.[1] as MaterialPreset) ? (materialMatch?.[1] as MaterialPreset) : 'cad-blue';
+  const material = materials.includes(materialMatch?.[1] as MaterialPreset)
+    ? (materialMatch?.[1] as MaterialPreset)
+    : 'cad-blue';
   return {
     material,
     parameters,
@@ -44,6 +57,8 @@ endsolid ${name}
 function findDimension(parameters: CadParameter[], names: string[], fallback: number): number {
   const exact = parameters.find((parameter) => names.includes(parameter.name));
   if (exact) return exact.value;
-  const fuzzy = parameters.find((parameter) => names.some((name) => parameter.name.toLowerCase().includes(name.toLowerCase())));
+  const fuzzy = parameters.find((parameter) =>
+    names.some((name) => parameter.name.toLowerCase().includes(name.toLowerCase()))
+  );
   return fuzzy?.value ?? fallback;
 }

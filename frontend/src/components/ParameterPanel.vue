@@ -17,7 +17,13 @@ function updatePartMaterial(part: string, material: string) {
   <aside class="parameter-panel">
     <div class="section-row">
       <div class="section-label">参数控制</div>
-      <button :disabled="store.parameters.length === 0" aria-label="重置所有参数为默认值" @click="store.resetParameters">重置</button>
+      <button
+        :disabled="store.parameters.length === 0"
+        aria-label="重置所有参数为默认值"
+        @click="store.resetParameters"
+      >
+        重置
+      </button>
     </div>
     <div v-if="groups.length === 0" class="empty compact">当前代码没有参数注释协议</div>
     <section v-for="group in groups" :key="group.name" class="parameter-group">
@@ -63,8 +69,14 @@ function updatePartMaterial(part: string, material: string) {
       </div>
       <label v-for="part in meshMaterials" :key="part" class="part-material">
         <span>{{ part }}</span>
-        <select :value="store.partMaterials[part] ?? store.material" :aria-label="`${part} 部件材质`" @change="updatePartMaterial(part, ($event.target as HTMLSelectElement).value)">
-          <option v-for="material in materialPresets" :key="material.id" :value="material.id">{{ material.label }}</option>
+        <select
+          :value="store.partMaterials[part] ?? store.material"
+          :aria-label="`${part} 部件材质`"
+          @change="updatePartMaterial(part, ($event.target as HTMLSelectElement).value)"
+        >
+          <option v-for="material in materialPresets" :key="material.id" :value="material.id">
+            {{ material.label }}
+          </option>
         </select>
       </label>
     </section>

@@ -12,7 +12,13 @@ describe('AI adapters', () => {
       .mockResolvedValueOnce(new Response('timeout', { status: 408 }))
       .mockResolvedValueOnce(
         Response.json({
-          choices: [{ message: { content: '{"kind":"box","title":"ok","width":50,"depth":30,"height":20,"material":"cad-blue"}' } }]
+          choices: [
+            {
+              message: {
+                content: '{"kind":"box","title":"ok","width":50,"depth":30,"height":20,"material":"cad-blue"}'
+              }
+            }
+          ]
         })
       );
     const waits: number[] = [];
@@ -40,7 +46,9 @@ describe('AI adapters', () => {
   it('builds OpenAI compatible requests for each provider without leaking secrets in logs', async () => {
     const fetchMock = vi.fn().mockResolvedValue(
       Response.json({
-        choices: [{ message: { content: '{"kind":"box","title":"ok","width":1,"depth":2,"height":3,"material":"gold"}' } }]
+        choices: [
+          { message: { content: '{"kind":"box","title":"ok","width":1,"depth":2,"height":3,"material":"gold"}' } }
+        ]
       })
     );
     const adapter = createOpenAiCompatibleAdapter({
