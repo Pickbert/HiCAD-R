@@ -1,4 +1,4 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { v4 as uuid } from 'uuid';
 import type { CadModel, MaterialPreset } from '@hicad/shared';
 import { parseCadParameters } from '@hicad/shared';
@@ -10,7 +10,7 @@ import { consumeDailyQuota } from '../users/quota.js';
 
 @Injectable()
 export class ModelService {
-  constructor(private readonly db: JsonDatabaseService) {}
+  constructor(@Inject(JsonDatabaseService) private readonly db: JsonDatabaseService) {}
 
   listMine(user: StoredUser): CadModel[] {
     return this.db.data.models.filter((model) => model.ownerId === user.id).sort(sortNewest);

@@ -3,6 +3,9 @@ import { computed, onMounted, reactive, ref } from 'vue';
 import type { CadModel, Template } from '@hicad/shared';
 import { fetchMarket, fetchTemplates } from '../api.js';
 import { useWorkspaceStore } from '../stores/workspace.js';
+import EmptyState from './ui/EmptyState.vue';
+import ErrorState from './ui/ErrorState.vue';
+import LoadingState from './ui/LoadingState.vue';
 
 defineProps<{ embedded?: boolean }>();
 const store = useWorkspaceStore();
@@ -35,6 +38,7 @@ const filteredTemplates = computed(() =>
       return Date.parse(right.createdAt) - Date.parse(left.createdAt);
     })
 );
+const resultCount = computed(() => filteredTemplates.value.length + models.value.length);
 
 onMounted(async () => {
   await refresh();
@@ -62,7 +66,7 @@ async function refresh() {
         <p class="eyebrow">模型市场</p>
         <h1>搜索、筛选和复用参数化模型</h1>
       </div>
-      <button :disabled="loading" @click="refresh">刷新</button>
+      <button :disabled="loading" aria-label="刷新模型市场" @click="refresh">刷新</button>
     </div>
     <div class="section-label" v-else>模型市场</div>
     <form class="market-filters" @submit.prevent="refresh">
@@ -81,17 +85,19 @@ async function refresh() {
         <option value="mostUsed">最多使用</option>
         <option value="featured">精选</option>
       </select>
-      <button :disabled="loading" type="submit">搜索</button>
+      <button :disabled="loading" type="submit" aria-label="搜索模型市场">搜索</button>
     </form>
-    <p v-if="error" class="error">{{ error }}</p>
+    <ErrorState v-if="error" :message="error" />
+    <LoadingState v-if="loading" label="正在加载市场模型" compact />
+    <EmptyState v-else-if="!error && resultCount === 0" title="暂无模型" detail="试试调整搜索词、分类或标签" compact />
     <div class="model-grid">
-      <button v-for="template in filteredTemplates" :key="template.id" class="model-card" @click="store.applyTemplate(template)">
+      <button v-for="template in filteredTemplates" :key="template.id" class="model-card" :aria-label="`打开模板 ${template.title}`" @click="store.applyTemplate(template)">
         <span class="badge">官方模板</span>
         <strong>{{ template.title }}</strong>
         <small>{{ template.description }}</small>
         <small>{{ template.category }} · {{ template.tags.join(', ') }}</small>
       </button>
-      <button v-for="model in models" :key="model.id" class="model-card" @click="store.applyTemplate(model)">
+      <button v-for="model in models" :key="model.id" class="model-card" :aria-label="`打开市场模型 ${model.title}`" @click="store.applyTemplate(model)">
         <span class="badge">社区共创</span>
         <strong>{{ model.title }}</strong>
         <small>{{ model.description }}</small>

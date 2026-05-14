@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Inject, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { CurrentUser } from '../common/current-user.decorator.js';
 import { AdminGuard } from '../common/admin.guard.js';
 import { JwtGuard } from '../common/jwt.guard.js';
@@ -9,7 +9,7 @@ import { nowIso, StoredUser } from '../domain.js';
 @UseGuards(JwtGuard, AdminGuard)
 @Controller('admin')
 export class AdminController {
-  constructor(private readonly db: JsonDatabaseService) {}
+  constructor(@Inject(JsonDatabaseService) private readonly db: JsonDatabaseService) {}
 
   @Get('stats')
   stats() {

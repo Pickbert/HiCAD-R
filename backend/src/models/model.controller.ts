@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, Query, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Inject, Param, Post, Put, Query, Req, UseGuards } from '@nestjs/common';
 import { CurrentUser } from '../common/current-user.decorator.js';
 import { JwtGuard, OptionalJwtGuard } from '../common/jwt.guard.js';
 import type { StoredUser } from '../domain.js';
@@ -7,7 +7,7 @@ import { ModelService } from './model.service.js';
 
 @Controller('models')
 export class ModelController {
-  constructor(private readonly models: ModelService) {}
+  constructor(@Inject(ModelService) private readonly models: ModelService) {}
 
   @UseGuards(OptionalJwtGuard)
   @Get('market')

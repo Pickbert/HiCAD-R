@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { v4 as uuid } from 'uuid';
@@ -12,9 +12,9 @@ import type { LoginDto, RefreshDto, RegisterDto } from './auth.dto.js';
 @Injectable()
 export class AuthService {
   constructor(
-    private readonly db: JsonDatabaseService,
-    private readonly jwt: JwtService,
-    private readonly config: ConfigService
+    @Inject(JsonDatabaseService) private readonly db: JsonDatabaseService,
+    @Inject(JwtService) private readonly jwt: JwtService,
+    @Inject(ConfigService) private readonly config: ConfigService
   ) {}
 
   async register(dto: RegisterDto): Promise<AuthResponse> {

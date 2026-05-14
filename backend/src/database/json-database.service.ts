@@ -1,6 +1,6 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import { Inject, Injectable, OnModuleInit, Optional } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { CadModel, Template } from '@hicad/shared';
 import type { ActivationCode, AuditLog, DatabaseState, Feedback, Order, StoredUser, UserQuota } from '../domain.js';
@@ -25,7 +25,7 @@ export class JsonDatabaseService
   private readonly dataFile: string;
   private readonly templateFile: string;
 
-  constructor(private readonly config?: ConfigService) {
+  constructor(@Optional() @Inject(ConfigService) private readonly config?: ConfigService) {
     const dataDir = this.config?.get<string>('DATA_DIR') ?? process.env.DATA_DIR ?? '../data';
     this.dataFile = resolve(dataDir, 'hicad-db.json');
     this.templateFile = resolve(dataDir, 'templates.json');

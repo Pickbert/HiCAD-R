@@ -1,22 +1,28 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref } from 'vue';
+import { computed, defineAsyncComponent, onBeforeUnmount, onMounted, ref } from 'vue';
 import AdminDashboard from './components/AdminDashboard.vue';
 import AiPanel from './components/AiPanel.vue';
 import AuthModal from './components/AuthModal.vue';
-import CodeEditor from './components/CodeEditor.vue';
 import MarketPanel from './components/MarketPanel.vue';
 import ModelLibrary from './components/ModelLibrary.vue';
 import ParameterPanel from './components/ParameterPanel.vue';
 import SharePreview from './components/SharePreview.vue';
 import ThreeViewer from './components/ThreeViewer.vue';
+import ConfirmDialog from './components/ui/ConfirmDialog.vue';
+import ToastStack from './components/ui/ToastStack.vue';
 import { apiFetch, fileToBase64Payload, importStl, listMine, me } from './api.js';
 import { useWorkspaceStore } from './stores/workspace.js';
+import { buildExportPreview, type ExportFormat } from './utils/exportPreview.js';
 import { meshToObj, meshToStl } from './utils/mesh.js';
 
+const CodeEditor = defineAsyncComponent(() => import('./components/CodeEditor.vue').then((module) => module.default));
 const store = useWorkspaceStore();
 const rightPanel = ref<'params' | 'market'>('params');
 const showAuth = ref(false);
 const stlInput = ref<HTMLInputElement | null>(null);
+const pendingExport = ref<ExportFormat | null>(null);
+const exporting = ref(false);
+const exportPreview = computed(() => (pendingExport.value ? buildExportPreview(store.meshes, pendingExport.value) : undefined));
 
 onMounted(() => {
   store.initAuth();
@@ -124,23 +130,28 @@ async function recordExport(format: 'stl' | 'obj') {
   }
 }
 
-async function exportStl() {
-  try {
-    await recordExport('stl');
-    downloadBlob(meshToStl(store.meshes, store.title), 'model/stl', 'stl');
-    store.toast('success', 'STL 已导出');
-  } catch (caught) {
-    store.toast('error', caught instanceof Error ? caught.message : 'STL 导出失败');
+function requestExport(format: ExportFormat) {
+  if (store.meshes.length === 0) {
+    store.toast('error', '当前没有可导出的真实网格，请等待渲染完成');
+    return;
   }
+  pendingExport.value = format;
 }
 
-async function exportObj() {
+async function confirmExport() {
+  if (!pendingExport.value) return;
+  exporting.value = true;
   try {
-    await recordExport('obj');
-    downloadBlob(meshToObj(store.meshes, store.title), 'model/obj', 'obj');
-    store.toast('success', 'OBJ 已导出');
+    const format = pendingExport.value;
+    await recordExport(format);
+    if (format === 'stl') downloadBlob(meshToStl(store.meshes, store.title), 'model/stl', 'stl');
+    else downloadBlob(meshToObj(store.meshes, store.title), 'model/obj', 'obj');
+    store.toast('success', `${format.toUpperCase()} 已导出`);
+    pendingExport.value = null;
   } catch (caught) {
-    store.toast('error', caught instanceof Error ? caught.message : 'OBJ 导出失败');
+    store.toast('error', caught instanceof Error ? caught.message : '导出失败');
+  } finally {
+    exporting.value = false;
   }
 }
 
@@ -188,56 +199,82 @@ function downloadBlob(content: string, type: string, extension: 'stl' | 'obj') {
       <div class="brand"><span class="hex"></span> HiCAD</div>
       <input v-model="store.title" class="title-input" aria-label="模型名称" />
       <nav class="top-nav" aria-label="主导航">
-        <button :class="{ active: store.routeView === 'workspace' }" @click="store.navigate('workspace')">工作台</button>
-        <button :class="{ active: store.routeView === 'market' }" @click="store.navigate('market')">市场</button>
-        <button :class="{ active: store.routeView === 'models' }" @click="store.navigate('models')">我的模型</button>
-        <button :class="{ active: store.routeView === 'admin' }" @click="store.navigate('admin')">后台</button>
+        <button :class="{ active: store.routeView === 'workspace' }" aria-label="打开工作台" @click="store.navigate('workspace')">工作台</button>
+        <button :class="{ active: store.routeView === 'market' }" aria-label="打开模型市场" @click="store.navigate('market')">市场</button>
+        <button :class="{ active: store.routeView === 'models' }" aria-label="打开我的模型" @click="store.navigate('models')">我的模型</button>
+        <button :class="{ active: store.routeView === 'admin' }" aria-label="打开管理后台" @click="store.navigate('admin')">后台</button>
       </nav>
       <div class="auth-area">
         <span v-if="store.user">{{ store.user.displayName }}</span>
-        <button v-if="store.user" @click="store.logout">退出</button>
-        <button v-else @click="showAuth = true">登录/注册</button>
+      <button v-if="store.user" aria-label="退出登录" @click="store.logout">退出</button>
+        <button v-else aria-label="打开登录或注册弹窗" @click="showAuth = true">登录/注册</button>
       </div>
-      <button :disabled="store.saving" @click="saveModel">保存</button>
-      <button :disabled="store.publishing" @click="publishModel">发布</button>
-      <button @click="exportStl">STL</button>
-      <button @click="exportObj">OBJ</button>
-      <button :disabled="store.sharing" @click="shareModel">分享</button>
-      <button :disabled="store.importing" @click="stlInput?.click()">导入 STL</button>
+      <button :disabled="store.saving" aria-label="保存当前模型" @click="saveModel">保存</button>
+      <button :disabled="store.publishing" aria-label="发布当前模型到市场" @click="publishModel">发布</button>
+      <button aria-label="预览并导出 STL 文件" @click="requestExport('stl')">STL</button>
+      <button aria-label="预览并导出 OBJ 文件" @click="requestExport('obj')">OBJ</button>
+      <button :disabled="store.sharing" aria-label="创建当前模型分享链接" @click="shareModel">分享</button>
+      <button :disabled="store.importing" aria-label="导入 STL 文件" @click="stlInput?.click()">导入 STL</button>
       <input ref="stlInput" class="hidden-input" type="file" accept=".stl,model/stl" @change="importSelectedStl" />
     </header>
     <section v-if="store.routeView === 'workspace'" class="workspace">
-      <AiPanel />
+      <details class="workspace-panel ai-workspace-panel" open>
+        <summary>AI 建模助手</summary>
+        <AiPanel />
+      </details>
       <div class="center-stack">
         <ThreeViewer />
         <CodeEditor />
       </div>
-      <div class="right-stack">
-        <div class="side-tabs">
-          <button :class="{ active: rightPanel === 'params' }" @click="rightPanel = 'params'">参数</button>
-          <button :class="{ active: rightPanel === 'market' }" @click="rightPanel = 'market'">市场</button>
-        </div>
-        <div v-if="rightPanel === 'params'" class="right-panel-scroll">
-          <div class="annotation-panel">
-            <div class="section-label">标注</div>
-            <label><input v-model="store.annotationSettings.dimensions" type="checkbox" /> 尺寸标注</label>
-            <label><input v-model="store.annotationSettings.parameterLabels" type="checkbox" /> 参数标签</label>
-            <label><input v-model="store.annotationSettings.axes" type="checkbox" /> 坐标轴</label>
-            <label><input v-model="store.annotationSettings.grid" type="checkbox" /> 网格</label>
+      <details class="workspace-panel right-workspace-panel" open>
+        <summary>参数与市场</summary>
+        <div class="right-stack">
+          <div class="side-tabs" role="tablist" aria-label="右侧面板">
+            <button :class="{ active: rightPanel === 'params' }" aria-label="显示参数面板" @click="rightPanel = 'params'">参数</button>
+            <button :class="{ active: rightPanel === 'market' }" aria-label="显示市场面板" @click="rightPanel = 'market'">市场</button>
           </div>
-          <ParameterPanel />
+          <div v-if="rightPanel === 'params'" class="right-panel-scroll">
+            <div class="annotation-panel">
+              <div class="section-label">标注</div>
+              <label><input v-model="store.annotationSettings.dimensions" type="checkbox" /> 尺寸标注</label>
+              <label><input v-model="store.annotationSettings.parameterLabels" type="checkbox" /> 参数标签</label>
+              <label><input v-model="store.annotationSettings.axes" type="checkbox" /> 坐标轴</label>
+              <label><input v-model="store.annotationSettings.grid" type="checkbox" /> 网格</label>
+            </div>
+            <ParameterPanel />
+          </div>
+          <MarketPanel v-else embedded />
         </div>
-        <MarketPanel v-else embedded />
-      </div>
+      </details>
     </section>
     <MarketPanel v-else-if="store.routeView === 'market'" />
     <ModelLibrary v-else-if="store.routeView === 'models'" />
     <AdminDashboard v-else-if="store.routeView === 'admin'" />
     <SharePreview v-else-if="store.routeView === 'share'" :token="store.shareToken" />
-    <div class="toast-stack">
-      <div v-for="toast in store.toasts" :key="toast.id" :class="['toast', toast.type]">{{ toast.text }}</div>
-    </div>
+    <ToastStack :toasts="store.toasts" />
+    <ConfirmDialog
+      :open="Boolean(pendingExport)"
+      title="导出预览"
+      confirm-label="确认导出"
+      cancel-label="取消"
+      :busy="exporting"
+      @confirm="confirmExport"
+      @cancel="pendingExport = null"
+    >
+      <div v-if="exportPreview" class="export-preview">
+        <div><span>格式</span><strong>{{ exportPreview.format }}</strong></div>
+        <div><span>单位</span><strong>{{ exportPreview.unit }}</strong></div>
+        <div><span>三角面</span><strong>{{ exportPreview.triangleCount }}</strong></div>
+        <div><span>顶点</span><strong>{{ exportPreview.vertexCount }}</strong></div>
+        <div>
+          <span>模型体积</span>
+          <strong>{{ exportPreview.volumeLabel }}</strong>
+        </div>
+        <div><span>预计文件体积</span><strong>{{ exportPreview.estimatedSizeLabel }}</strong></div>
+        <p v-if="exportPreview.volumeSource === 'bounding-box'">当前网格不是闭合体，体积按包围盒估算。</p>
+      </div>
+    </ConfirmDialog>
     <AuthModal v-if="showAuth" @close="showAuth = false" />
-    <footer class="statusbar">{{ store.status || '就绪 · Worker 隔离解析 · 浏览器端渲染' }}</footer>
+    <footer class="statusbar" role="status">{{ store.status || '就绪 · Worker 隔离解析 · 浏览器端渲染' }}</footer>
   </main>
 </template>

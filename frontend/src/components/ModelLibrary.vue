@@ -3,6 +3,9 @@ import { computed, onMounted, ref } from 'vue';
 import type { CadModel } from '@hicad/shared';
 import { apiFetch, listMine } from '../api.js';
 import { useWorkspaceStore } from '../stores/workspace.js';
+import EmptyState from './ui/EmptyState.vue';
+import ErrorState from './ui/ErrorState.vue';
+import LoadingState from './ui/LoadingState.vue';
 
 const store = useWorkspaceStore();
 const filter = ref<'all' | 'draft' | 'published' | 'shared'>('all');
@@ -61,18 +64,19 @@ async function share(model: CadModel) {
         <p class="eyebrow">模型列表</p>
         <h1>我的模型</h1>
       </div>
-      <button :disabled="loading || !store.accessToken" @click="refresh">刷新</button>
+      <button :disabled="loading || !store.accessToken" aria-label="刷新我的模型列表" @click="refresh">刷新</button>
     </div>
-    <div v-if="!store.accessToken" class="empty">登录后可以查看草稿、已发布和分享中的模型</div>
+    <EmptyState v-if="!store.accessToken" title="需要登录" detail="登录后可以查看草稿、已发布和分享中的模型" />
     <template v-else>
       <div class="segmented toolbar-row">
-        <button :class="{ active: filter === 'all' }" @click="filter = 'all'">全部</button>
-        <button :class="{ active: filter === 'draft' }" @click="filter = 'draft'">草稿</button>
-        <button :class="{ active: filter === 'published' }" @click="filter = 'published'">已发布</button>
-        <button :class="{ active: filter === 'shared' }" @click="filter = 'shared'">分享中</button>
+        <button :class="{ active: filter === 'all' }" aria-label="显示全部模型" @click="filter = 'all'">全部</button>
+        <button :class="{ active: filter === 'draft' }" aria-label="显示草稿模型" @click="filter = 'draft'">草稿</button>
+        <button :class="{ active: filter === 'published' }" aria-label="显示已发布模型" @click="filter = 'published'">已发布</button>
+        <button :class="{ active: filter === 'shared' }" aria-label="显示分享中的模型" @click="filter = 'shared'">分享中</button>
       </div>
-      <p v-if="error" class="error">{{ error }}</p>
-      <div v-if="filteredModels.length === 0" class="empty compact">{{ loading ? '加载中' : '暂无模型' }}</div>
+      <ErrorState v-if="error" :message="error" />
+      <LoadingState v-if="loading" label="正在加载我的模型" compact />
+      <EmptyState v-else-if="filteredModels.length === 0" title="暂无模型" compact />
       <div class="model-grid">
         <article v-for="model in filteredModels" :key="model.id" class="model-card rich">
           <span class="badge">{{ model.visibility === 'public' ? '已发布' : model.visibility === 'shared' ? '分享中' : '草稿' }}</span>
@@ -80,9 +84,9 @@ async function share(model: CadModel) {
           <small>{{ model.description || '无描述' }}</small>
           <small>{{ model.category }} · {{ model.tags.join(', ') || '无标签' }}</small>
           <div class="card-actions">
-            <button @click="store.applyModel(model)">打开</button>
-            <button :disabled="model.visibility === 'public'" @click="publish(model)">发布</button>
-            <button @click="share(model)">分享</button>
+            <button :aria-label="`打开模型 ${model.title}`" @click="store.applyModel(model)">打开</button>
+            <button :disabled="model.visibility === 'public'" :aria-label="`发布模型 ${model.title}`" @click="publish(model)">发布</button>
+            <button :aria-label="`分享模型 ${model.title}`" @click="share(model)">分享</button>
           </div>
         </article>
       </div>

@@ -1,9 +1,9 @@
-import { Controller, Get, NotFoundException, Param, Post } from '@nestjs/common';
+import { Controller, Get, Inject, NotFoundException, Param, Post } from '@nestjs/common';
 import { JsonDatabaseService } from '../database/json-database.service.js';
 
 @Controller('templates')
 export class TemplateController {
-  constructor(private readonly db: JsonDatabaseService) {}
+  constructor(@Inject(JsonDatabaseService) private readonly db: JsonDatabaseService) {}
 
   @Get()
   list() {

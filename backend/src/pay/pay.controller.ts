@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Headers, NotFoundException, Param, Post, UnauthorizedException, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Headers, Inject, NotFoundException, Param, Post, UnauthorizedException, UseGuards } from '@nestjs/common';
 import { CurrentUser } from '../common/current-user.decorator.js';
 import { JwtGuard } from '../common/jwt.guard.js';
 import { JsonDatabaseService } from '../database/json-database.service.js';
@@ -9,7 +9,7 @@ import { MockPaymentProvider } from './payment-provider.js';
 
 @Controller('pay')
 export class PayController {
-  constructor(private readonly db: JsonDatabaseService) {}
+  constructor(@Inject(JsonDatabaseService) private readonly db: JsonDatabaseService) {}
 
   @UseGuards(JwtGuard)
   @Post('create')

@@ -3,9 +3,26 @@ import * as THREE from 'three';
 export interface WorkerMesh {
   material: string;
   color: [number, number, number];
+  partIds?: string[];
   positions: Float32Array;
   normals: Float32Array;
   indices: Uint32Array;
+}
+
+export interface MeshBoundingBox {
+  min: [number, number, number];
+  max: [number, number, number];
+  width: number;
+  depth: number;
+  height: number;
+}
+
+export interface MeshStats {
+  triangleCount: number;
+  vertexCount: number;
+  meshCount: number;
+  drawCallCount: number;
+  boundingBox: MeshBoundingBox;
 }
 
 export function buildGeometryFromWorkerMesh(mesh: WorkerMesh): THREE.BufferGeometry {
@@ -16,6 +33,50 @@ export function buildGeometryFromWorkerMesh(mesh: WorkerMesh): THREE.BufferGeome
   geometry.computeBoundingBox();
   geometry.computeBoundingSphere();
   return geometry;
+}
+
+export function mergeWorkerMeshesByMaterial(meshes: WorkerMesh[]): WorkerMesh[] {
+  const groups = new Map<string, WorkerMesh[]>();
+  for (const mesh of meshes) {
+    const key = `${mesh.material}:${mesh.color.join(',')}`;
+    groups.set(key, [...(groups.get(key) ?? []), mesh]);
+  }
+  return [...groups.values()].map(mergeMeshGroup);
+}
+
+export function computeMeshStats(meshes: WorkerMesh[]): MeshStats {
+  let triangleCount = 0;
+  let vertexCount = 0;
+  const min: [number, number, number] = [Infinity, Infinity, Infinity];
+  const max: [number, number, number] = [-Infinity, -Infinity, -Infinity];
+  for (const mesh of meshes) {
+    triangleCount += mesh.indices.length / 3;
+    vertexCount += mesh.positions.length / 3;
+    for (let index = 0; index < mesh.positions.length; index += 3) {
+      min[0] = Math.min(min[0], mesh.positions[index]);
+      min[1] = Math.min(min[1], mesh.positions[index + 1]);
+      min[2] = Math.min(min[2], mesh.positions[index + 2]);
+      max[0] = Math.max(max[0], mesh.positions[index]);
+      max[1] = Math.max(max[1], mesh.positions[index + 1]);
+      max[2] = Math.max(max[2], mesh.positions[index + 2]);
+    }
+  }
+  const empty = vertexCount === 0;
+  const safeMin: [number, number, number] = empty ? [0, 0, 0] : min;
+  const safeMax: [number, number, number] = empty ? [0, 0, 0] : max;
+  return {
+    triangleCount,
+    vertexCount,
+    meshCount: meshes.length,
+    drawCallCount: meshes.length,
+    boundingBox: {
+      min: safeMin,
+      max: safeMax,
+      width: Number((safeMax[0] - safeMin[0]).toFixed(4)),
+      depth: Number((safeMax[1] - safeMin[1]).toFixed(4)),
+      height: Number((safeMax[2] - safeMin[2]).toFixed(4))
+    }
+  };
 }
 
 export function meshToStl(meshes: WorkerMesh[], name = 'hicad-model'): string {
@@ -63,4 +124,38 @@ export function meshToObj(meshes: WorkerMesh[], name = 'hicad-model'): string {
 
 function normalAt(mesh: WorkerMesh, positionIndex: number): [number, number, number] {
   return [mesh.normals[positionIndex] ?? 0, mesh.normals[positionIndex + 1] ?? 0, mesh.normals[positionIndex + 2] ?? 1];
+}
+
+function mergeMeshGroup(group: WorkerMesh[]): WorkerMesh {
+  if (group.length === 1) return group[0];
+  const positionLength = group.reduce((total, mesh) => total + mesh.positions.length, 0);
+  const normalLength = group.reduce((total, mesh) => total + mesh.normals.length, 0);
+  const indexLength = group.reduce((total, mesh) => total + mesh.indices.length, 0);
+  const positions = new Float32Array(positionLength);
+  const normals = new Float32Array(normalLength);
+  const indices = new Uint32Array(indexLength);
+  const partIds = [...new Set(group.flatMap((mesh) => mesh.partIds ?? []))];
+  let positionOffset = 0;
+  let normalOffset = 0;
+  let indexOffset = 0;
+  let vertexOffset = 0;
+  for (const mesh of group) {
+    positions.set(mesh.positions, positionOffset);
+    normals.set(mesh.normals, normalOffset);
+    for (let index = 0; index < mesh.indices.length; index += 1) {
+      indices[indexOffset + index] = mesh.indices[index] + vertexOffset;
+    }
+    positionOffset += mesh.positions.length;
+    normalOffset += mesh.normals.length;
+    indexOffset += mesh.indices.length;
+    vertexOffset += mesh.positions.length / 3;
+  }
+  return {
+    material: group[0].material,
+    color: group[0].color,
+    partIds,
+    positions,
+    normals,
+    indices
+  };
 }

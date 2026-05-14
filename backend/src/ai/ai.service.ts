@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Observable } from 'rxjs';
 import type { AiProvider, AiStreamEvent } from '@hicad/shared';
@@ -16,8 +16,8 @@ import { consumeDailyQuota } from '../users/quota.js';
 @Injectable()
 export class AiService {
   constructor(
-    private readonly config: ConfigService,
-    private readonly db: JsonDatabaseService
+    @Inject(ConfigService) private readonly config: ConfigService,
+    @Inject(JsonDatabaseService) private readonly db: JsonDatabaseService
   ) {}
 
   streamGenerate(prompt: string, userId?: string, provider?: AiProvider, model?: string): Observable<MessageEvent> {

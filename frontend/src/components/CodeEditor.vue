@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import * as monaco from 'monaco-editor';
+import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
+import 'monaco-editor/esm/vs/basic-languages/javascript/javascript.contribution';
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useWorkspaceStore } from '../stores/workspace.js';
 

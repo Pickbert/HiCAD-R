@@ -3,6 +3,7 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { fetchAiHistory, modifyAi, streamGenerate, type ClosableStream } from '../api.js';
 import { useWorkspaceStore } from '../stores/workspace.js';
 import { mergeAiStreamEvent, summarizeAiEvent } from '../utils/ai.js';
+import EmptyState from './ui/EmptyState.vue';
 
 const store = useWorkspaceStore();
 const source = ref<ClosableStream | null>(null);
@@ -95,8 +96,8 @@ onBeforeUnmount(() => source.value?.close());
       <option value="qwen">Qwen-Max · 千问</option>
     </select>
     <div class="segmented">
-      <button :class="{ active: store.aiMode === 'generate' }" @click="store.aiMode = 'generate'">生成</button>
-      <button :class="{ active: store.aiMode === 'modify' }" @click="store.aiMode = 'modify'">修改当前代码</button>
+      <button :class="{ active: store.aiMode === 'generate' }" aria-label="切换到 AI 生成模式" @click="store.aiMode = 'generate'">生成</button>
+      <button :class="{ active: store.aiMode === 'modify' }" aria-label="切换到基于当前代码修改模式" @click="store.aiMode = 'modify'">修改当前代码</button>
     </div>
     <div class="status-track">
       <span v-for="state in ['start', 'spec', 'retry', 'code', 'done', 'error']" :key="state" :class="{ active: store.aiStatus === state }">
@@ -104,9 +105,7 @@ onBeforeUnmount(() => source.value?.close());
       </span>
     </div>
     <div class="messages">
-      <div v-if="store.messages.length === 0" class="empty">
-        用自然语言描述你的参数化 3D 模型
-      </div>
+      <EmptyState v-if="store.messages.length === 0" title="用自然语言描述你的参数化 3D 模型" />
       <div v-for="(message, index) in store.messages" :key="index" :class="['message', message.role]">
         {{ message.text }}
       </div>
@@ -119,13 +118,13 @@ onBeforeUnmount(() => source.value?.close());
       </p>
       <pre>{{ store.pendingAiSummary?.preview.join('\n') }}</pre>
       <div class="card-actions">
-        <button @click="store.applyPendingAiCode">应用</button>
-        <button @click="store.discardPendingAiCode">丢弃</button>
+        <button aria-label="应用 AI 生成代码" @click="store.applyPendingAiCode">应用</button>
+        <button aria-label="丢弃 AI 生成代码" @click="store.discardPendingAiCode">丢弃</button>
       </div>
     </section>
     <details class="history-box">
       <summary>历史记录 {{ store.aiHistory.length }}</summary>
-      <button v-for="entry in store.aiHistory.slice(0, 6)" :key="entry.id" class="history-item" @click="store.setPendingAiCode(entry.code)">
+      <button v-for="entry in store.aiHistory.slice(0, 6)" :key="entry.id" class="history-item" :aria-label="`预览历史生成 ${entry.prompt}`" @click="store.setPendingAiCode(entry.code)">
         <strong>{{ entry.prompt }}</strong>
         <small>{{ entry.provider }} · {{ new Date(entry.createdAt).toLocaleString() }}</small>
       </button>
@@ -136,10 +135,10 @@ onBeforeUnmount(() => source.value?.close());
         placeholder="例如：生成一个 50x30x20mm 的长方形盒子"
         @keydown.enter.exact.prevent="submit"
       ></textarea>
-      <button :disabled="store.isGenerating" @click="submit">
+      <button :disabled="store.isGenerating" aria-label="提交 AI 建模请求" @click="submit">
         {{ store.isGenerating ? '处理中' : store.aiMode === 'modify' ? '修改' : '发送' }}
       </button>
     </div>
-    <button :disabled="store.isGenerating || !lastPrompt" @click="regenerate">重新生成</button>
+    <button :disabled="store.isGenerating || !lastPrompt" aria-label="根据上次提示重新生成" @click="regenerate">重新生成</button>
   </aside>
 </template>

@@ -1,4 +1,4 @@
-import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
+import { CanActivate, ExecutionContext, Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { JsonDatabaseService } from '../database/json-database.service.js';
@@ -7,9 +7,9 @@ import { getRequiredSecret } from '../security/runtime-security.js';
 @Injectable()
 export class JwtGuard implements CanActivate {
   constructor(
-    private readonly jwt: JwtService,
-    private readonly config: ConfigService,
-    private readonly db: JsonDatabaseService
+    @Inject(JwtService) private readonly jwt: JwtService,
+    @Inject(ConfigService) private readonly config: ConfigService,
+    @Inject(JsonDatabaseService) private readonly db: JsonDatabaseService
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -33,9 +33,9 @@ export class JwtGuard implements CanActivate {
 @Injectable()
 export class OptionalJwtGuard implements CanActivate {
   constructor(
-    private readonly jwt: JwtService,
-    private readonly config: ConfigService,
-    private readonly db: JsonDatabaseService
+    @Inject(JwtService) private readonly jwt: JwtService,
+    @Inject(ConfigService) private readonly config: ConfigService,
+    @Inject(JsonDatabaseService) private readonly db: JsonDatabaseService
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {

@@ -1,4 +1,4 @@
-import { Body, Controller, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Inject, Post, Req, UseGuards } from '@nestjs/common';
 import { IsEmail, IsOptional, IsString, MinLength } from 'class-validator';
 import { OptionalJwtGuard } from '../common/jwt.guard.js';
 import { JsonDatabaseService } from '../database/json-database.service.js';
@@ -16,7 +16,7 @@ class FeedbackDto {
 
 @Controller('feedback')
 export class FeedbackController {
-  constructor(private readonly db: JsonDatabaseService) {}
+  constructor(@Inject(JsonDatabaseService) private readonly db: JsonDatabaseService) {}
 
   @UseGuards(OptionalJwtGuard)
   @Post()

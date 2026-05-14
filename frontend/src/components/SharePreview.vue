@@ -38,7 +38,7 @@ async function loadShare() {
         <p class="eyebrow">只读分享预览</p>
         <h1>{{ store.title }}</h1>
       </div>
-      <button @click="store.navigate('workspace')">回到工作台</button>
+      <button aria-label="回到工作台" @click="store.navigate('workspace')">回到工作台</button>
     </div>
     <div class="share-layout">
       <ThreeViewer />

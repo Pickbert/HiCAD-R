@@ -2,6 +2,9 @@
 import { computed, onMounted, reactive, ref } from 'vue';
 import { apiFetch, fetchAdminResource } from '../api.js';
 import { useWorkspaceStore } from '../stores/workspace.js';
+import EmptyState from './ui/EmptyState.vue';
+import ErrorState from './ui/ErrorState.vue';
+import LoadingState from './ui/LoadingState.vue';
 
 type AdminTab = 'users' | 'models' | 'templates' | 'orders' | 'feedbacks' | 'activation-codes';
 
@@ -86,11 +89,12 @@ function rowMeta(row: any): string {
         <p class="eyebrow">管理后台</p>
         <h1>运营数据与内容管理</h1>
       </div>
-      <button :disabled="loading || !store.isAdmin" @click="refreshAll">刷新</button>
+      <button :disabled="loading || !store.isAdmin" aria-label="刷新管理后台数据" @click="refreshAll">刷新</button>
     </div>
-    <div v-if="!store.isAdmin" class="empty">仅管理员可访问后台页面</div>
+    <EmptyState v-if="!store.isAdmin" title="仅管理员可访问后台页面" />
     <template v-else>
-      <p v-if="error" class="error">{{ error }}</p>
+      <ErrorState v-if="error" :message="error" />
+      <LoadingState v-if="loading" label="正在加载管理后台" compact />
       <div class="stat-grid">
         <div v-for="(value, key) in stats" :key="key" class="stat-cell">
           <span>{{ key }}</span>
@@ -98,7 +102,7 @@ function rowMeta(row: any): string {
         </div>
       </div>
       <div class="segmented toolbar-row">
-        <button v-for="item in tabs" :key="item.id" :class="{ active: tab === item.id }" @click="refreshTab(item.id)">
+        <button v-for="item in tabs" :key="item.id" :class="{ active: tab === item.id }" :aria-label="`打开${item.label}管理页`" @click="refreshTab(item.id)">
           {{ item.label }}
         </button>
       </div>
@@ -110,8 +114,9 @@ function rowMeta(row: any): string {
           <option value="pro">pro</option>
           <option value="team">team</option>
         </select>
-        <button type="submit">批量创建</button>
+        <button type="submit" aria-label="批量创建激活码">批量创建</button>
       </form>
+      <EmptyState v-if="!loading && rows.length === 0" title="暂无记录" compact />
       <div class="admin-list">
         <article v-for="(row, index) in rows" :key="(row as any).id ?? (row as any).code ?? index" class="admin-row">
           <strong>{{ rowTitle(row) }}</strong>

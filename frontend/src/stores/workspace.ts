@@ -6,7 +6,8 @@ import { buildPreviewSummary, type PreviewSummary } from '../utils/cad.js';
 import { clearStoredAuth, loadStoredAuth, saveStoredAuth } from '../utils/auth.js';
 import type { CodeDiffSummary, UiMessage } from '../utils/ai.js';
 import { buildCodeDiffSummary } from '../utils/ai.js';
-import type { WorkerMesh } from '../utils/mesh.js';
+import type { CadPartNode } from '../utils/cadRuntime.js';
+import type { MeshStats, WorkerMesh } from '../utils/mesh.js';
 import { captureParameterDefaults, normalizeParameterValue, resetParameterDefaults } from '../utils/parameters.js';
 
 const defaultCode = `// @material: cad-blue
@@ -28,6 +29,7 @@ module.exports = { main }
 `;
 
 export type RouteView = 'workspace' | 'market' | 'models' | 'admin' | 'share';
+export type CameraPreset = 'front' | 'side' | 'top' | 'iso';
 
 export const materialPresets: Array<{ id: MaterialPreset; label: string; color: string }> = [
   { id: 'cad-blue', label: 'CAD Blue', color: '#4ea1ff' },
@@ -52,6 +54,11 @@ export const useWorkspaceStore = defineStore('workspace', {
     material: 'cad-blue' as MaterialPreset,
     messages: [] as UiMessage[],
     meshes: [] as WorkerMesh[],
+    cadParts: [] as CadPartNode[],
+    renderStats: undefined as (MeshStats & { elapsedMs?: number }) | undefined,
+    autoRenderPaused: false,
+    renderError: '',
+    cameraPreset: 'iso' as CameraPreset,
     user: undefined as User | undefined,
     accessToken: '',
     refreshToken: '',
@@ -161,6 +168,27 @@ export const useWorkspaceStore = defineStore('workspace', {
     },
     setMeshes(meshes: WorkerMesh[]) {
       this.meshes = meshes;
+    },
+    setRenderResult(payload: { meshes: WorkerMesh[]; parts: CadPartNode[]; stats: MeshStats & { elapsedMs?: number } }) {
+      this.meshes = payload.meshes;
+      this.cadParts = payload.parts;
+      this.renderStats = payload.stats;
+      this.renderError = '';
+      this.autoRenderPaused = false;
+    },
+    setRenderError(message: string, options: { pauseAutoRender?: boolean } = {}) {
+      this.meshes = [];
+      this.cadParts = [];
+      this.renderError = message;
+      this.autoRenderPaused = Boolean(options.pauseAutoRender);
+    },
+    resumeAutoRender() {
+      this.autoRenderPaused = false;
+      this.renderError = '';
+    },
+    setCameraPreset(preset: CameraPreset) {
+      this.cameraPreset = preset;
+      if (preset === 'top') this.viewMode = 'plan';
     },
     setPendingAiCode(code: string) {
       this.pendingAiCode = code;

@@ -10,6 +10,15 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
-    sourcemap: true
+    sourcemap: true,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('monaco-editor')) return 'monaco-editor';
+          if (id.includes('three')) return 'three';
+          return undefined;
+        }
+      }
+    }
   }
 });

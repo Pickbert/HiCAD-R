@@ -1,11 +1,11 @@
-import { Body, Controller, Get, Post, Query, Req, Sse, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Inject, Post, Query, Req, Sse, UseGuards } from '@nestjs/common';
 import { AiProvider } from '@hicad/shared';
 import { OptionalJwtGuard } from '../common/jwt.guard.js';
 import { AiService } from './ai.service.js';
 
 @Controller('ai')
 export class AiController {
-  constructor(private readonly ai: AiService) {}
+  constructor(@Inject(AiService) private readonly ai: AiService) {}
 
   @UseGuards(OptionalJwtGuard)
   @Sse('generate')
