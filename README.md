@@ -14,13 +14,21 @@
 [![Vue 3](https://img.shields.io/badge/Vue-3.x-42b883.svg?logo=vuedotjs)](https://vuejs.org/)
 [![NestJS](https://img.shields.io/badge/NestJS-10.x-E0234E.svg?logo=nestjs)](https://nestjs.com/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6.svg?logo=typescript)](https://www.typescriptlang.org/)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/MrXujiang/HiCAD/pulls)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/Pickbert/HiCAD-R/pulls)
 
 [🚀 demo](https://hicad.mvtable.com) · [✨ 功能特性](#-功能特性) · [🤖 AI 配置](#-ai-适配器配置) · [🛠️ 技术栈](#️-技术栈) · [🤝 参与贡献](#-参与贡献)
 
 </div>
 
 💡：在线体验：https://hicad.mvtable.com
+
+---
+
+## 🙏 致谢与来源
+
+HiCAD-R 基于原始开源项目 [MrXujiang/HiCAD](https://github.com/MrXujiang/HiCAD) 继续整理、增强与产品化。感谢原作者和社区贡献者提供的基础工作与开源精神。
+
+当前维护仓库：[Pickbert/HiCAD-R](https://github.com/Pickbert/HiCAD-R)
 
 ---
 
@@ -299,7 +307,7 @@ server {
 ## 📬 联系与支持
 
 - 本地开发可使用 `.env` 中的 `DEV_ACTIVATION_CODE` 注册；生产环境请通过管理员接口创建激活码。
-- 提交 [GitHub Issue](https://github.com/MrXujiang/HiCAD/issues) 反馈 Bug 或功能建议。
+- 提交 [GitHub Issue](https://github.com/Pickbert/HiCAD-R/issues) 反馈 Bug 或功能建议。
 
 ---
 
